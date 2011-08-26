@@ -3,14 +3,6 @@ Run the server
 
 Run `mvn clean package jetty:run`
 
-Contributors
-------------
-
-* Joram Barrez (Alfresco)
-* Daniel Meyer (Camunda)
-* Frederik Heremans (Alfresco)
-* Bernd Ruecker (Camunda)
-
 TODO
 ----
 
@@ -41,6 +33,14 @@ Screenshots & Screencast
 ------------------------
 
 [Screencast from Januari 2011](http://www.jorambarrez.be/blog/2011/01/05/adhoc-workflow-with-activiti-kickstart/)
+
+Contributors
+------------
+
+* Joram Barrez (Alfresco)
+* Daniel Meyer (Camunda)
+* Frederik Heremans (Alfresco)
+* Bernd Ruecker (Camunda)
 
 
 
