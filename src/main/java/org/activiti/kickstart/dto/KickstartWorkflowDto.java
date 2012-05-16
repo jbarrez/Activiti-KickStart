@@ -126,6 +126,7 @@ public class KickstartWorkflowDto {
     org.activiti.kickstart.bpmn20.model.Process process = new org.activiti.kickstart.bpmn20.model.Process();
     process.setId("adhoc_" + processName);
     process.setName(getName());
+    process.setExecutable(true);
     Documentation processDocumentation = new Documentation();
     processDocumentation.setId(process.getId() + "_documentation");
     processDocumentation.setText(getDescription());

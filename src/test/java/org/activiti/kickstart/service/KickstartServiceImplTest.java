@@ -244,7 +244,6 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         
         InputStream in = generator.execute();
         assertNotNull(in);
-//        createFile(in, "c:/temp/mail.png");
     }
 
     private KickstartWorkflowDto createSimpleEmailTaskWorkflow() {
@@ -268,6 +267,10 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     public void testDeployAndFindUserTaskWorkflow() throws Exception {
         KickstartWorkflowDto dto = createSimpleUserTaskWorkflow();
         KickstartServiceImpl service = new KickstartServiceImpl(processEngine);
+        
+        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
+        System.out.println(bpmn);
+
 
         String deploymentId = service.deployKickstartWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
