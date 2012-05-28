@@ -37,7 +37,7 @@ public class ProcessEnginesServletContextListener implements ServletContextListe
               + "Please verify if your activiti.cfg.xml configuration is correct.");
       
       if ("true".equals(System.getProperty("KickStartDebugInMem"))) {
-        LOGGER.info("KickStartDebugInMem system property found. Switching to in memory Activiti configuratuon");
+        LOGGER.info("KickStartDebugInMem system property found. Switching to in memory Activiti configuration");
         processEngine = StandaloneInMemProcessEngineConfiguration
           .createStandaloneInMemProcessEngineConfiguration().buildProcessEngine();
         ProcessEngines.registerProcessEngine(processEngine);
