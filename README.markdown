@@ -1,7 +1,7 @@
-Run the server
---------------
+Run the UI
+----------
 
-Run `mvn clean package jetty:run`
+Run `./start-ui.sh`
 
 TODO
 ----

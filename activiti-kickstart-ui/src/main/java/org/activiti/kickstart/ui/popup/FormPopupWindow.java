@@ -14,8 +14,8 @@ package org.activiti.kickstart.ui.popup;
 
 import org.activiti.kickstart.dto.FormDto;
 import org.activiti.kickstart.dto.FormPropertyDto;
-import org.activiti.kickstart.model.TaskFormModel;
 import org.activiti.kickstart.ui.table.PropertyTable;
+import org.activiti.kickstart.model.TaskFormModel;
 
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;

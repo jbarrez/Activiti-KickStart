@@ -13,10 +13,10 @@
 package org.activiti.kickstart.ui.listener;
 
 import org.activiti.kickstart.dto.KickstartWorkflowDto;
-import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.ui.ViewManager;
-import org.activiti.kickstart.ui.panel.KickstartWorkflowPanel;
 import org.activiti.kickstart.ui.popup.ErrorPopupWindow;
+import org.activiti.kickstart.service.KickstartService;
+import org.activiti.kickstart.ui.panel.KickstartWorkflowPanel;
 
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;

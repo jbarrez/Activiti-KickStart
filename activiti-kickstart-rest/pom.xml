@@ -6,8 +6,13 @@
 	<name>Activiti - KickStart - REST</name>
 	<groupId>org.activiti</groupId>
 	<artifactId>activiti-kickstart-rest</artifactId>
-	<version>1.1</version>
 	<packaging>war</packaging>
+
+    <parent>
+        <groupId>org.activiti</groupId>
+        <artifactId>activiti-kickstart</artifactId>
+        <version>1.1</version>
+    </parent>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

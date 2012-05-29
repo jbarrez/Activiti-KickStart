@@ -17,9 +17,9 @@ import java.util.UUID;
 
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
 import org.activiti.kickstart.dto.KickstartWorkflowDto;
+import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.ServiceLocator;
-import org.activiti.kickstart.ui.ViewManager;
 
 import com.vaadin.terminal.StreamResource;
 import com.vaadin.terminal.StreamResource.StreamSource;

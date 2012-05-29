@@ -12,17 +12,15 @@
  */
 package org.activiti.kickstart.ui.panel;
 
-import java.util.List;
-
 import org.activiti.kickstart.dto.BaseTaskDto;
 import org.activiti.kickstart.dto.KickstartWorkflowDto;
 import org.activiti.kickstart.dto.UserTaskDto;
-import org.activiti.kickstart.service.KickstartService;
-import org.activiti.kickstart.service.ServiceLocator;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ErrorPopupWindow;
 import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 import org.activiti.kickstart.ui.table.TaskTable;
+import org.activiti.kickstart.service.KickstartService;
+import org.activiti.kickstart.service.ServiceLocator;
 
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;

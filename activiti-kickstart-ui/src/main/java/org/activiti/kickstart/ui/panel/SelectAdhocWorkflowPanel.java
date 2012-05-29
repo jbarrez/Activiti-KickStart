@@ -17,11 +17,11 @@ import java.util.Date;
 import java.util.List;
 
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
+import org.activiti.kickstart.ui.ViewManager;
+import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.ServiceLocator;
-import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.listener.EditExistingKickstartWorkflowClickListener;
-import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 
 import com.vaadin.data.Item;
 import com.vaadin.terminal.StreamResource;

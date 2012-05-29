@@ -12,9 +12,9 @@
  */
 package org.activiti.kickstart.ui.listener;
 
-import org.activiti.kickstart.model.TaskFormModel;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.FormPopupWindow;
+import org.activiti.kickstart.model.TaskFormModel;
 
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
