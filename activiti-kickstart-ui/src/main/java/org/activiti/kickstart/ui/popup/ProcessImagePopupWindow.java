@@ -55,7 +55,7 @@ public class ProcessImagePopupWindow extends Window {
 
   public void init(ViewManager viewManager) {
     this.viewManager = viewManager;
-    this.adhocWorkflowService = ServiceLocator.getAdhocWorkflowService();
+    this.adhocWorkflowService = ServiceLocator.getKickStartService();
     initUi();
   }
 

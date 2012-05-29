@@ -56,7 +56,7 @@ public class SelectAdhocWorkflowPanel extends Panel {
 
   public SelectAdhocWorkflowPanel(ViewManager viewManager) {
     this.viewManager = viewManager;
-    this.adhocWorkflowService = ServiceLocator.getAdhocWorkflowService();
+    this.adhocWorkflowService = ServiceLocator.getKickStartService();
 //    this.editImage = new ClassResource("images/edit.png", viewManager.getApplication());
 //    this.xmlImage = new ClassResource("images/xml.png", viewManager.getApplication());
 
@@ -151,7 +151,7 @@ public class SelectAdhocWorkflowPanel extends Panel {
         private static final long serialVersionUID = -8875067466181823014L;
 
         public InputStream getStream() {
-          return ServiceLocator.getAdhocWorkflowService().getProcessBpmnXml(infoDto.getId());
+          return ServiceLocator.getKickStartService().getProcessBpmnXml(infoDto.getId());
         }
       };
       Link bpmnXmlLink = new Link("get xml", new StreamResource(streamSource, infoDto.getKey() + ".bpmn20.xml", viewManager.getApplication()));

@@ -71,21 +71,29 @@ public class KickstartServiceImpl implements KickstartService {
     this.historyService = processEngine.getHistoryService();
   }
 
-  public String deployKickstartWorkflow(KickstartWorkflowDto adhocWorkflow) throws JAXBException {
-    String deploymentName = "Process " + adhocWorkflow.getName();
-    String bpmn20XmlResourceName = generateBpmnResourceName(adhocWorkflow.getName());
+  public String deployKickstartWorkflow(KickstartWorkflowDto kickstartWorkflow) throws JAXBException {
+    String deploymentName = "Process " + kickstartWorkflow.getName();
+    String bpmn20XmlResourceName = generateBpmnResourceName(kickstartWorkflow.getName());
     DeploymentBuilder deploymentBuilder = repositoryService.createDeployment().name(deploymentName);
 
     // png image (must go first, since it will add DI to the process xml)
-    ProcessDiagramGenerator converter = new ProcessDiagramGenerator(adhocWorkflow);
+    ProcessDiagramGenerator converter = new ProcessDiagramGenerator(kickstartWorkflow);
     deploymentBuilder.addInputStream(bpmn20XmlResourceName.replace(".bpmn20.xml", ".png"), converter.execute());
 
     // bpmn 2.0 xml
-    deploymentBuilder.addString(bpmn20XmlResourceName, createBpmn20Xml(adhocWorkflow));
+    deploymentBuilder.addString(bpmn20XmlResourceName, marshallWorkflow(kickstartWorkflow));
 
     // deploy the whole package
     Deployment deployment = deploymentBuilder.deploy();
     return deployment.getId();
+  }
+  
+  public String marshallWorkflow(KickstartWorkflowDto kickstartWorkflowDto) throws JAXBException {
+    JAXBContext jaxbContext = JAXBContext.newInstance(Definitions.class);
+    Marshaller marshaller = jaxbContext.createMarshaller();
+    StringWriter writer = new StringWriter();
+    marshaller.marshal(kickstartWorkflowDto.toBpmn20Xml(), writer);
+    return writer.toString();
   }
 
   public List<KickstartWorkflowInfo> findKickstartWorkflowInformation() {
@@ -96,37 +104,7 @@ public class KickstartServiceImpl implements KickstartService {
     .orderByProcessDefinitionVersion()
     .desc()
     .list();
-    return convertToDto(processDefinitions);
-  }
-
-  protected List<KickstartWorkflowInfo> convertToDto(List<ProcessDefinition> processDefinitions) {
-    List<KickstartWorkflowInfo> dtos = new ArrayList<KickstartWorkflowInfo>();
-    for (ProcessDefinition processDefinition : processDefinitions) {
-      KickstartWorkflowInfo dto = new KickstartWorkflowInfo();
-      dto.setId(processDefinition.getId());
-      dto.setKey(processDefinition.getKey());
-      dto.setName(processDefinition.getName());
-      dto.setVersion(processDefinition.getVersion());
-      dto.setDeploymentId(processDefinition.getDeploymentId());
-
-      Date deploymentTime = repositoryService.createDeploymentQuery()
-      .deploymentId(processDefinition.getDeploymentId())
-      .singleResult()
-      .getDeploymentTime();
-      dto.setCreateTime(deploymentTime);
-
-      dto.setNrOfRuntimeInstances(historyService.createHistoricProcessInstanceQuery()
-              .processDefinitionId(processDefinition.getId())
-              .unfinished()
-              .count());
-      dto.setNrOfHistoricInstances(historyService.createHistoricProcessInstanceQuery()
-              .processDefinitionId(processDefinition.getId())
-              .finished()
-              .count());
-
-      dtos.add(dto);
-    }
-    return dtos;
+    return convertToWorkflowInformation(processDefinitions);
   }
 
   public KickstartWorkflowDto findKickstartWorkflowById(String id) throws JAXBException {
@@ -150,13 +128,13 @@ public class KickstartServiceImpl implements KickstartService {
     }
 
     // Convert JAXB to internal model
-    return convertToAdhocWorkflow(processDefinition.getDeploymentId(), definitions);
+    return convertBpmnProcessDefinitionToInternalWorkflowDto(processDefinition.getDeploymentId(), definitions);
   }
 
   public InputStream getProcessImage(String processDefinitionId) {
     ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
-    .processDefinitionId(processDefinitionId)
-    .singleResult();
+    		.processDefinitionId(processDefinitionId)
+    		.singleResult();
     return repositoryService.getResourceAsStream(processDefinition.getDeploymentId(), 
             processDefinition.getDiagramResourceName());
   };
@@ -169,21 +147,46 @@ public class KickstartServiceImpl implements KickstartService {
             processDefinition.getResourceName());
   }
 
-  // Helpers ////////////////////////////////////////////////////////
+  // Helper methods ///////////////////////////////////////////////////////////////////
 
+  /**
+   * Generates a valid bpmn 2.0 file name for the given process name.
+   */
   protected String generateBpmnResourceName(String processName) {
     return processName.replace(" ", "_") + ".bpmn20.xml";
   }
+  
+  protected List<KickstartWorkflowInfo> convertToWorkflowInformation(List<ProcessDefinition> processDefinitions) {
+	    List<KickstartWorkflowInfo> infoList = new ArrayList<KickstartWorkflowInfo>();
+	    for (ProcessDefinition processDefinition : processDefinitions) {
+	      KickstartWorkflowInfo workflowInfo = new KickstartWorkflowInfo();
+	      workflowInfo.setId(processDefinition.getId());
+	      workflowInfo.setKey(processDefinition.getKey());
+	      workflowInfo.setName(processDefinition.getName());
+	      workflowInfo.setVersion(processDefinition.getVersion());
+	      workflowInfo.setDeploymentId(processDefinition.getDeploymentId());
 
-  protected String createBpmn20Xml(KickstartWorkflowDto adhocWorkflow) throws JAXBException {
-    JAXBContext jaxbContext = JAXBContext.newInstance(Definitions.class);
-    Marshaller marshaller = jaxbContext.createMarshaller();
-    StringWriter writer = new StringWriter();
-    marshaller.marshal(adhocWorkflow.toBpmn20Xml(), writer);
-    return writer.toString();
-  }
+	      Date deploymentTime = repositoryService.createDeploymentQuery()
+	      .deploymentId(processDefinition.getDeploymentId())
+	      .singleResult()
+	      .getDeploymentTime();
+	      workflowInfo.setCreateTime(deploymentTime);
 
-  public KickstartWorkflowDto convertToAdhocWorkflow(String deploymentId, Definitions definitions) {
+	      workflowInfo.setNrOfRuntimeInstances(historyService.createHistoricProcessInstanceQuery()
+	              .processDefinitionId(processDefinition.getId())
+	              .unfinished()
+	              .count());
+	      workflowInfo.setNrOfHistoricInstances(historyService.createHistoricProcessInstanceQuery()
+	              .processDefinitionId(processDefinition.getId())
+	              .finished()
+	              .count());
+
+	      infoList.add(workflowInfo);
+	    }
+	    return infoList;
+	  }
+
+  public KickstartWorkflowDto convertBpmnProcessDefinitionToInternalWorkflowDto(String deploymentId, Definitions definitions) {
     KickstartWorkflowDto adhocWorkflow = new KickstartWorkflowDto();
 
     for (BaseElement baseElement : definitions.getRootElement()) {
@@ -226,7 +229,7 @@ public class KickstartServiceImpl implements KickstartService {
           BaseTaskDto taskDto = null;
           if (tasks.containsKey(targetRef)) {
 
-            taskDto = convertTaskToTaskDto(deploymentId, (Task) currentSequenceFlow.getTargetRef());
+            taskDto = convertBpmnTaskToInternalTaskDto(deploymentId, (Task) currentSequenceFlow.getTargetRef());
             currentSequenceFlow = sequenceFlows.get(currentSequenceFlow.getTargetRef().getId()).get(0); // Can be only one
             adhocWorkflow.addTask(taskDto);
 
@@ -236,7 +239,7 @@ public class KickstartServiceImpl implements KickstartService {
             for (int i = 0; i < sequenceFlows.get(targetRef).size(); i++) {
               SequenceFlow seqFlowOutOfGateway = sequenceFlows.get(targetRef).get(i);
               task = (Task) seqFlowOutOfGateway.getTargetRef();
-              taskDto = convertTaskToTaskDto(deploymentId, task);
+              taskDto = convertBpmnTaskToInternalTaskDto(deploymentId, task);
               if (i > 0) {
                 taskDto.setStartWithPrevious(true);
               }
@@ -256,24 +259,24 @@ public class KickstartServiceImpl implements KickstartService {
     return adhocWorkflow;
   }
 
-  protected BaseTaskDto convertTaskToTaskDto(final String deploymentId, final Task task) {
+  protected BaseTaskDto convertBpmnTaskToInternalTaskDto(final String deploymentId, final Task task) {
     BaseTaskDto baseTaskDto = null;
 
     if (task instanceof UserTask) {
       baseTaskDto = new UserTaskDto();
-      convertUserTaskToTaskDto(deploymentId, (UserTaskDto) baseTaskDto, (UserTask) task);
+      convertBpmnUserTaskToInternalTaskDto(deploymentId, (UserTaskDto) baseTaskDto, (UserTask) task);
     } else if (task instanceof ServiceTask) {
       if (((ServiceTask)task).getType() != null
               && ((ServiceTask)task).getType().equals("mail")) {
         baseTaskDto = new MailTaskDto();
-        convertMailTaskToTaskDto(deploymentId, (MailTaskDto) baseTaskDto, (ServiceTask) task);
+        convertBpmnMailTaskToInternalTaskDto(deploymentId, (MailTaskDto) baseTaskDto, (ServiceTask) task);
       } else {
         baseTaskDto = new ServiceTaskDto();
-        convertServiceTaskToTaskDto(deploymentId, (ServiceTaskDto) baseTaskDto, (ServiceTask) task);
+        convertBpmnServiceTaskToInternalTaskDto(deploymentId, (ServiceTaskDto) baseTaskDto, (ServiceTask) task);
       }
     } else if (task instanceof ScriptTask) {
       baseTaskDto = new ScriptTaskDto();
-      convertScriptTaskToTaskDto(deploymentId, (ScriptTaskDto) baseTaskDto, (ScriptTask) task);
+      convertBpmnScriptTaskToInternalTaskDto(deploymentId, (ScriptTaskDto) baseTaskDto, (ScriptTask) task);
     }
 
     handleBaseTaskDtoProperties(baseTaskDto, task);
@@ -294,7 +297,7 @@ public class KickstartServiceImpl implements KickstartService {
     }
   }
 
-  protected void convertUserTaskToTaskDto(final String deploymentId, UserTaskDto task, final UserTask userTask) {
+  protected void convertBpmnUserTaskToInternalTaskDto(final String deploymentId, UserTaskDto task, final UserTask userTask) {
     // Assignment
     for (ActivityResource activityResource : userTask.getActivityResource()) {
       if (activityResource instanceof PotentialOwner) {
@@ -340,14 +343,14 @@ public class KickstartServiceImpl implements KickstartService {
     }
   }
 
-  protected void convertServiceTaskToTaskDto(final String deploymentId, ServiceTaskDto task, final ServiceTask serviceTask) {
+  protected void convertBpmnServiceTaskToInternalTaskDto(final String deploymentId, ServiceTaskDto task, final ServiceTask serviceTask) {
 
     task.setClassName(serviceTask.getClassName());
     task.setExpression(serviceTask.getExpression());
     task.setDelegateExpression(serviceTask.getDelegateExpression());
   }
 
-  protected void convertMailTaskToTaskDto(final String deploymentId, MailTaskDto task, final ServiceTask serviceTask) {
+  protected void convertBpmnMailTaskToInternalTaskDto(final String deploymentId, MailTaskDto task, final ServiceTask serviceTask) {
 
     List<AbstractExtensionElement> extensionElements = serviceTask.getExtensionElements().getAny();
     for (AbstractExtensionElement abstractExtensionElement : extensionElements) {
@@ -378,7 +381,7 @@ public class KickstartServiceImpl implements KickstartService {
     }
   }
 
-  protected void convertScriptTaskToTaskDto(final String deploymentId, ScriptTaskDto task, final ScriptTask serviceTask) {
+  protected void convertBpmnScriptTaskToInternalTaskDto(final String deploymentId, ScriptTaskDto task, final ScriptTask serviceTask) {
     task.setScriptFormat(serviceTask.getScriptFormat());
     task.setResultVariableName(serviceTask.getResultVariableName());
     task.setScript(serviceTask.getScript());

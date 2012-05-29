@@ -76,7 +76,7 @@ public class KickstartWorkflowPanel extends Panel {
   protected void init() {
     setSizeFull();
     setStyleName(Reindeer.PANEL_LIGHT);
-    this.kickStartService = ServiceLocator.getAdhocWorkflowService();
+    this.kickStartService = ServiceLocator.getKickStartService();
     initUi();
   }
 

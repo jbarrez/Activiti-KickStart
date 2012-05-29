@@ -22,8 +22,8 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     public void testSimpleUserTask() throws Exception {
         KickstartWorkflowDto dto = createSimpleUserTaskWorkflow();
 
-        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
-        //System.out.println(bpmn);
+        String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
+        System.out.println(bpmn);
 
         assertTrue(bpmn.indexOf("userTask ") > - 1);
         assertFalse(bpmn.indexOf("serviceTask ") > - 1);
@@ -64,7 +64,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     public void testSimpleServiceTask() throws Exception {
         KickstartWorkflowDto dto = createSimpleServiceTaskWorkflow();
 
-        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
+        String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
         //System.out.println(bpmn);
 
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -104,7 +104,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     public void testSimpleEmailTask() throws Exception {
         KickstartWorkflowDto dto = createSimpleEmailTaskWorkflow();
         
-        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
+        String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
         //System.out.println(bpmn);
         
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -148,7 +148,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         
         dto.addTask(task);
         
-        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
+        String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
         //System.out.println(bpmn);
         
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -213,7 +213,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         
         dto.addTask(task);
         
-        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
+        String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
         //System.out.println(bpmn);
         
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -268,7 +268,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         KickstartWorkflowDto dto = createSimpleUserTaskWorkflow();
         KickstartServiceImpl service = new KickstartServiceImpl(processEngine);
         
-        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
+        String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
         System.out.println(bpmn);
 
 
@@ -445,7 +445,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         
 //        createFile(in, "c:/temp/parallel.png");
         
-        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
+        String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
         //System.out.println(bpmn);
         
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -463,7 +463,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         
         KickstartWorkflowDto dto = createSimpleScriptTask();
         
-        String bpmn = new KickstartServiceImpl(processEngine).createBpmn20Xml(dto);
+        String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
         //System.out.println(bpmn);
 
         assertTrue(bpmn.indexOf("scriptTask ") > - 1);

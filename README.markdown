@@ -3,12 +3,6 @@ Run the UI
 
 Run `./start-ui.sh`
 
-TODO
-----
-
-* Switch to Activiti form properties to be compliant with latest Activiti
-* Redesign current view
-
 Overview
 --------
 

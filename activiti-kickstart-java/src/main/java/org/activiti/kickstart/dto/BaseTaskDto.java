@@ -52,8 +52,7 @@ public abstract class BaseTaskDto {
    * Creates the Flow element for this BaseTaskDto. Every Dto knows about its
    * corresponding FlowElement;
    * 
-   * @return A instance of {@link FlowElement} which represents this Dto in BPMN
-   *         2.0
+   * @return A instance of {@link FlowElement} which represents this Dto in BPMN 2.0
    */
   public abstract FlowElement createFlowElement();
 

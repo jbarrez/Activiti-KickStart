@@ -17,7 +17,6 @@ import java.util.List;
 
 import javax.xml.bind.JAXBException;
 
-import org.activiti.engine.repository.Deployment;
 import org.activiti.kickstart.dto.KickstartWorkflowDto;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 
@@ -26,17 +25,39 @@ import org.activiti.kickstart.dto.KickstartWorkflowInfo;
  */
 public interface KickstartService {
 
-  /**
-   * deploys the Workflow and returns the deployment id
-   */
-  String deployKickstartWorkflow(KickstartWorkflowDto adhocWorkflow) throws JAXBException;
+	/**
+	 * Deploys the given workflow representation to the configured Activiti engine.
+	 */
+	String deployKickstartWorkflow(KickstartWorkflowDto kickstartWorkflowDto) throws JAXBException;
+	
+	/**
+	 * Marshalls the given {@link KickstartWorkflowDto} to a BPMN 2.0 compatible XML.
+	 */
+	String marshallWorkflow(KickstartWorkflowDto kickstartWorkflowDto) throws JAXBException;
 
-  List<KickstartWorkflowInfo> findKickstartWorkflowInformation();
+	/**
+	 * Retrieves a list of {@link KickstartWorkflowInfo} instances which
+	 * correspond with all the processes that are deployed to the configured
+	 * Activiti engine and which can are compatible with KickStart.
+	 */
+	List<KickstartWorkflowInfo> findKickstartWorkflowInformation();
 
-  KickstartWorkflowDto findKickstartWorkflowById(String id) throws JAXBException;
+	/**
+	 * Fetches the process definition for the KickStart workflow from
+	 * the configured Activiti engine data store.
+	 */
+	KickstartWorkflowDto findKickstartWorkflowById(String id) throws JAXBException;
 
-  InputStream getProcessImage(String processDefinitionId);
+	/**
+	 * Returns an {@link InputStream} to the process image for the process definition
+	 * with the given id (convenience method - this is already possible with Activiti)
+	 */
+	InputStream getProcessImage(String processDefinitionId);
 
-  InputStream getProcessBpmnXml(String processDefinitionId);
+	/**
+	 * Returns an {@link InputStream} to the BPMN 2.0 xml for the process definition
+	 * with the given id (convenience method - this is already possible with Activiti).
+	 */
+	InputStream getProcessBpmnXml(String processDefinitionId);
 
 }
