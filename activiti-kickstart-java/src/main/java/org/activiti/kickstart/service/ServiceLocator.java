@@ -14,6 +14,7 @@ package org.activiti.kickstart.service;
 
 import org.activiti.engine.ProcessEngines;
 
+
 /**
  * 
  * Yes, i know Service Locator is considered a 'bad design' nowadays. But given
@@ -24,17 +25,28 @@ import org.activiti.engine.ProcessEngines;
  */
 public class ServiceLocator {
 
-  protected static KickstartService instance;
+	protected static KickstartService instance;
 
-  public static KickstartService getKickStartService() {
-    if (instance == null) {
-      synchronized (ServiceLocator.class) {
-        if (instance == null) {
-          instance = new KickstartServiceImpl(ProcessEngines.getDefaultProcessEngine());
-        }
-      }
-    }
-    return instance;
-  }
+	public static KickstartService getDefaultKickStartService() {
+		if (instance == null) {
+			synchronized (ServiceLocator.class) {
+				if (instance == null) {
+					KickstartServiceImpl kickstartService = new KickstartServiceImpl();
+					kickstartService.setRepositoryService(ProcessEngines.getDefaultProcessEngine().getRepositoryService());
+					
+					TransformationServiceImpl transformationService = new TransformationServiceImpl();
+					transformationService.setRepositoryService(ProcessEngines.getDefaultProcessEngine().getRepositoryService());
+					transformationService.setHistoryService(ProcessEngines.getDefaultProcessEngine().getHistoryService());
+
+					FormTransformationServiceImpl formTransformationService = new FormTransformationServiceImpl();
+					transformationService.setFormTransformationService(formTransformationService);
+					kickstartService.setTransformationService(transformationService);
+					
+					instance = kickstartService;
+				}
+			}
+		}
+		return instance;
+	}
 
 }

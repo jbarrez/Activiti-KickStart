@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.util.UUID;
 
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
-import org.activiti.kickstart.dto.KickstartWorkflowDto;
+import org.activiti.kickstart.dto.WorkflowDto;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.ServiceLocator;
@@ -39,7 +39,7 @@ public class ProcessImagePopupWindow extends Window {
   protected static final String TITLE = "Process image";
 
   protected ViewManager viewManager;
-  protected KickstartWorkflowDto adhocWorkflow;
+  protected WorkflowDto adhocWorkflow;
   protected String processDefinitionId;
   protected KickstartService adhocWorkflowService;
 
@@ -48,14 +48,14 @@ public class ProcessImagePopupWindow extends Window {
     init(viewManager);
   }
 
-  public ProcessImagePopupWindow(ViewManager viewManager, KickstartWorkflowDto adhocWorkflow) {
+  public ProcessImagePopupWindow(ViewManager viewManager, WorkflowDto adhocWorkflow) {
     this.adhocWorkflow = adhocWorkflow;
     init(viewManager);
   }
 
   public void init(ViewManager viewManager) {
     this.viewManager = viewManager;
-    this.adhocWorkflowService = ServiceLocator.getKickStartService();
+    this.adhocWorkflowService = ServiceLocator.getDefaultKickStartService();
     initUi();
   }
 

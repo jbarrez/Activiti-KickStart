@@ -3,7 +3,7 @@ package org.activiti.kickstart.dto;
 import org.activiti.kickstart.bpmn20.model.FlowElement;
 import org.activiti.kickstart.bpmn20.model.activity.type.ScriptTask;
 
-public class ScriptTaskDto extends BaseTaskDto {
+public class ScriptTaskDto extends TaskDto {
 
   private String scriptFormat;
 

@@ -18,11 +18,11 @@ public class KickstartWorkflowDtoTest {
 
     @Test
     public void testSimpleUserTask() throws Exception {
-        KickstartWorkflowDto dto = new KickstartWorkflowDto();
+        WorkflowDto dto = new WorkflowDto();
         dto.setName("One User Task Workflow");
         dto.setDescription("Simple workflow definition containing one user task");
 
-        BaseTaskDto task = new UserTaskDto();
+        TaskDto task = new UserTaskDto();
         task.setId("myId");
         task.setName("My First User task");
         task.setDescription("Desc first User task");
@@ -46,7 +46,7 @@ public class KickstartWorkflowDtoTest {
     
     @Test
     public void testSimpleServiceTask() throws Exception {
-        KickstartWorkflowDto dto = new KickstartWorkflowDto();
+        WorkflowDto dto = new WorkflowDto();
         dto.setName("One Service Task Workflow");
         dto.setDescription("Simple workflow definition containing one service task");
 
@@ -82,7 +82,7 @@ public class KickstartWorkflowDtoTest {
     
     @Test
     public void testSimpleEmailTask() throws Exception {
-        KickstartWorkflowDto dto = new KickstartWorkflowDto();
+        WorkflowDto dto = new WorkflowDto();
         dto.setName("One Service Task Workflow");
         dto.setDescription("Simple workflow definition containing one service task");
 
@@ -120,7 +120,7 @@ public class KickstartWorkflowDtoTest {
     
     @Test
     public void testTwoParallelServiceTasks() throws Exception {
-        KickstartWorkflowDto dto = new KickstartWorkflowDto();
+        WorkflowDto dto = new WorkflowDto();
         dto.setName("One Service Task Workflow");
         dto.setDescription("Simple workflow definition containing one service task");
 
@@ -174,7 +174,7 @@ public class KickstartWorkflowDtoTest {
     
     @Test
     public void testParallelServiceAndUserTasks() throws Exception {
-        KickstartWorkflowDto dto = new KickstartWorkflowDto();
+        WorkflowDto dto = new WorkflowDto();
         dto.setName("One Service Task Workflow");
         dto.setDescription("Simple workflow definition containing one service task");
 

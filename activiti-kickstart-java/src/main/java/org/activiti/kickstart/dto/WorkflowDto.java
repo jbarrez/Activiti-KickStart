@@ -32,20 +32,20 @@ import org.activiti.kickstart.util.ExpressionUtil;
 /**
  * @author Joram Barrez
  */
-public class KickstartWorkflowDto {
+public class WorkflowDto {
 
   public static final String START_NAME = "theStart";
   public static final String END_NAME = "theEnd";
 
   protected String name;
   protected String description;
-  protected List<BaseTaskDto> tasks = new ArrayList<BaseTaskDto>();
+  protected List<TaskDto> tasks = new ArrayList<TaskDto>();
   protected List<TaskBlock> taskBlocks;
 
   // Cached version of the BPMN JAXB counterpart
   protected Definitions definitions;
 
-  public KickstartWorkflowDto() {
+  public WorkflowDto() {
   }
 
   public String getName() {
@@ -66,17 +66,17 @@ public class KickstartWorkflowDto {
     this.definitions = null;
   }
 
-  public List<BaseTaskDto> getTasks() {
+  public List<TaskDto> getTasks() {
     return Collections.unmodifiableList(tasks);
   }
 
-  public void setTasks(List<BaseTaskDto> tasks) {
+  public void setTasks(List<TaskDto> tasks) {
     this.tasks = tasks;
     this.taskBlocks = null;
     this.definitions = null;
   }
 
-  public void addTask(BaseTaskDto task) {
+  public void addTask(TaskDto task) {
     tasks.add(task);
     
     // Reset any previously generated taskblocks
@@ -94,7 +94,7 @@ public class KickstartWorkflowDto {
   protected void generateTaskBlocks() {
     taskBlocks = new ArrayList<TaskBlock>();
     for (int i = 0; i < tasks.size(); i++) {
-      BaseTaskDto task = tasks.get(i);
+      TaskDto task = tasks.get(i);
       // Parallel tasks are grouped in the same task block
       if (task.getStartsWithPrevious() && (i != 0)) {
         taskBlocks.get(taskBlocks.size() - 1).addTask(task);
@@ -157,7 +157,7 @@ public class KickstartWorkflowDto {
       List<FlowElement> TaskBlock = new ArrayList<FlowElement>();
       TaskBlockList.add(TaskBlock);
 
-      for (BaseTaskDto baseTask : taskBlock.getTasks()) {
+      for (TaskDto baseTask : taskBlock.getTasks()) {
 
         FlowElement generatedTask = baseTask.createFlowElement();
 

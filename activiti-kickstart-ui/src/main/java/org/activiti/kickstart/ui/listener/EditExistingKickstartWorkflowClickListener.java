@@ -12,7 +12,7 @@
  */
 package org.activiti.kickstart.ui.listener;
 
-import org.activiti.kickstart.dto.KickstartWorkflowDto;
+import org.activiti.kickstart.dto.WorkflowDto;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ErrorPopupWindow;
 import org.activiti.kickstart.service.KickstartService;
@@ -38,7 +38,7 @@ public class EditExistingKickstartWorkflowClickListener implements Button.ClickL
 
   public void buttonClick(ClickEvent event) {
     try {
-      KickstartWorkflowDto adhocWorkflow = adhocWorkflowService.findKickstartWorkflowById((String) event.getButton().getData());
+      WorkflowDto adhocWorkflow = adhocWorkflowService.findKickstartWorkflowById((String) event.getButton().getData());
       viewManager.switchWorkArea(ViewManager.EDIT_ADHOC_WORKFLOW, new KickstartWorkflowPanel(viewManager, adhocWorkflow));
     } catch (Exception e) {
       e.printStackTrace();

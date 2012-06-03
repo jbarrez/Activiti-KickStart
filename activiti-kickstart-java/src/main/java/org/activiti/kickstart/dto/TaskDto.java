@@ -2,7 +2,7 @@ package org.activiti.kickstart.dto;
 
 import org.activiti.kickstart.bpmn20.model.FlowElement;
 
-public abstract class BaseTaskDto {
+public abstract class TaskDto {
 
   protected String id;
 
@@ -12,7 +12,7 @@ public abstract class BaseTaskDto {
 
   protected boolean startWithPrevious;
 
-  public BaseTaskDto() {
+  public TaskDto() {
     super();
   }
 

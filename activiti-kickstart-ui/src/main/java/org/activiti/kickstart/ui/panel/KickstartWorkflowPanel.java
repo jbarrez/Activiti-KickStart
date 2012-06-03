@@ -12,8 +12,8 @@
  */
 package org.activiti.kickstart.ui.panel;
 
-import org.activiti.kickstart.dto.BaseTaskDto;
-import org.activiti.kickstart.dto.KickstartWorkflowDto;
+import org.activiti.kickstart.dto.TaskDto;
+import org.activiti.kickstart.dto.WorkflowDto;
 import org.activiti.kickstart.dto.UserTaskDto;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ErrorPopupWindow;
@@ -59,9 +59,9 @@ public class KickstartWorkflowPanel extends Panel {
   // dependencies
   protected ViewManager viewManager;
   protected KickstartService kickStartService;
-  protected KickstartWorkflowDto existingAdhocWorkflow;
+  protected WorkflowDto existingAdhocWorkflow;
 
-  public KickstartWorkflowPanel(ViewManager viewManager, KickstartWorkflowDto existingAdhocWorkflow) {
+  public KickstartWorkflowPanel(ViewManager viewManager, WorkflowDto existingAdhocWorkflow) {
     this.viewManager = viewManager;
     this.existingAdhocWorkflow = existingAdhocWorkflow;
     this.saveImage = new ClassResource("images/page_save.png", viewManager.getApplication());
@@ -76,7 +76,7 @@ public class KickstartWorkflowPanel extends Panel {
   protected void init() {
     setSizeFull();
     setStyleName(Reindeer.PANEL_LIGHT);
-    this.kickStartService = ServiceLocator.getKickStartService();
+    this.kickStartService = ServiceLocator.getDefaultKickStartService();
     initUi();
   }
 
@@ -142,7 +142,7 @@ public class KickstartWorkflowPanel extends Panel {
     if (existingAdhocWorkflow == null) {
       taskTable.addDefaultTaskRow();
     } else {
-      for (BaseTaskDto task : existingAdhocWorkflow.getTasks()) {
+      for (TaskDto task : existingAdhocWorkflow.getTasks()) {
         if(task instanceof UserTaskDto) {
           taskTable.addTaskRow((UserTaskDto) task);
         }
@@ -209,8 +209,8 @@ public class KickstartWorkflowPanel extends Panel {
     layout.addComponent(footer);
   }
 
-  protected KickstartWorkflowDto createAdhocWorkflow() {
-    KickstartWorkflowDto adhocWorkflow = new KickstartWorkflowDto();
+  protected WorkflowDto createAdhocWorkflow() {
+    WorkflowDto adhocWorkflow = new WorkflowDto();
     adhocWorkflow.setName((String) nameField.getValue());
     adhocWorkflow.setDescription((String) descriptionField.getValue());
     for (UserTaskDto task : taskTable.getTasks()) {

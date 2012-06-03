@@ -27,7 +27,7 @@ import org.activiti.kickstart.bpmn20.model.extension.activiti.ActivitiFormProper
 /**
  * @author Joram Barrez
  */
-public class UserTaskDto extends BaseTaskDto {
+public class UserTaskDto extends TaskDto {
 
   protected String assignee;
 

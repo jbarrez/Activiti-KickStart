@@ -10,11 +10,11 @@ import java.util.List;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.test.ActivitiTestCase;
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
-import org.activiti.kickstart.dto.BaseTaskDto;
-import org.activiti.kickstart.dto.KickstartWorkflowDto;
+import org.activiti.kickstart.dto.TaskDto;
 import org.activiti.kickstart.dto.UserTaskDto;
+import org.activiti.kickstart.dto.WorkflowDto;
 import org.activiti.kickstart.service.KickstartService;
-import org.activiti.kickstart.service.KickstartServiceImpl;
+import org.activiti.kickstart.service.ServiceLocator;
 import org.junit.After;
 import org.junit.Test;
 
@@ -37,7 +37,7 @@ public class KickstartTest extends ActivitiTestCase {
 
     @Test
     public void testAdhocWorkflowDiagram() throws Exception {
-        KickstartWorkflowDto wf = new KickstartWorkflowDto();
+        WorkflowDto wf = new WorkflowDto();
         wf.setName("Test process");
         wf.setTasks(getTaskList());
 
@@ -57,11 +57,11 @@ public class KickstartTest extends ActivitiTestCase {
 
     @Test
     public void testAdhocWorkflowDeployment() throws Exception {
-        KickstartWorkflowDto wf = new KickstartWorkflowDto();
+        WorkflowDto wf = new WorkflowDto();
         wf.setName("Test process");
         wf.setTasks(getTaskList());
 
-        KickstartService service = new KickstartServiceImpl(processEngine);
+        KickstartService service = ServiceLocator.getDefaultKickStartService();
         service.deployKickstartWorkflow(wf);
 
         List<ProcessDefinition> definitions = processEngine.getRepositoryService()
@@ -75,8 +75,8 @@ public class KickstartTest extends ActivitiTestCase {
         assertEquals("Test process", wf.getName());
     }
 
-    private List<BaseTaskDto> getTaskList() {
-        List<BaseTaskDto> tasks = new ArrayList<BaseTaskDto>();
+    private List<TaskDto> getTaskList() {
+        List<TaskDto> tasks = new ArrayList<TaskDto>();
         UserTaskDto task = new UserTaskDto();
         task.setId("T1");
         task.setName("Test 1");

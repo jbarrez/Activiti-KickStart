@@ -5,7 +5,7 @@ import org.activiti.kickstart.bpmn20.model.activity.type.ServiceTask;
 import org.activiti.kickstart.bpmn20.model.extension.ExtensionElements;
 import org.activiti.kickstart.bpmn20.model.extension.activiti.ActivitFieldExtensionElement;
 
-public class MailTaskDto extends BaseTaskDto {
+public class MailTaskDto extends TaskDto {
 
   public static class Field {
 

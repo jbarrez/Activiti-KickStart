@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
-import org.activiti.kickstart.dto.KickstartWorkflowInfo;
+import org.activiti.kickstart.dto.WorkflowInfo;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 import org.activiti.kickstart.service.KickstartService;
@@ -56,7 +56,7 @@ public class SelectAdhocWorkflowPanel extends Panel {
 
   public SelectAdhocWorkflowPanel(ViewManager viewManager) {
     this.viewManager = viewManager;
-    this.adhocWorkflowService = ServiceLocator.getKickStartService();
+    this.adhocWorkflowService = ServiceLocator.getDefaultKickStartService();
 //    this.editImage = new ClassResource("images/edit.png", viewManager.getApplication());
 //    this.xmlImage = new ClassResource("images/xml.png", viewManager.getApplication());
 
@@ -115,8 +115,8 @@ public class SelectAdhocWorkflowPanel extends Panel {
   }
 
   protected void initWorkflowTableContents() {
-    List<KickstartWorkflowInfo> processDefinitions = adhocWorkflowService.findKickstartWorkflowInformation();
-    for (final KickstartWorkflowInfo infoDto : processDefinitions) {
+    List<WorkflowInfo> processDefinitions = adhocWorkflowService.findKickstartWorkflowInformation();
+    for (final WorkflowInfo infoDto : processDefinitions) {
       Item workflowItem = workflowTable.getItem(workflowTable.addItem());
       Button nameButton = new Button(infoDto.getName());
       nameButton.setStyleName("link");
@@ -151,7 +151,7 @@ public class SelectAdhocWorkflowPanel extends Panel {
         private static final long serialVersionUID = -8875067466181823014L;
 
         public InputStream getStream() {
-          return ServiceLocator.getKickStartService().getProcessBpmnXml(infoDto.getId());
+          return ServiceLocator.getDefaultKickStartService().getProcessBpmnXml(infoDto.getId());
         }
       };
       Link bpmnXmlLink = new Link("get xml", new StreamResource(streamSource, infoDto.getKey() + ".bpmn20.xml", viewManager.getApplication()));
