@@ -23,7 +23,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         KickstartWorkflowDto dto = createSimpleUserTaskWorkflow();
 
         String bpmn = new KickstartServiceImpl(processEngine).marshallWorkflow(dto);
-        System.out.println(bpmn);
+//        System.out.println(bpmn);
 
         assertTrue(bpmn.indexOf("userTask ") > - 1);
         assertFalse(bpmn.indexOf("serviceTask ") > - 1);
