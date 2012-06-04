@@ -12,42 +12,32 @@
  */
 package org.activiti.kickstart.dto;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * @author Joram Barrez
  */
-public class TaskBlock {
+public class KickstartFormProperty {
 
-  protected List<TaskDto> tasks;
+  protected String property;
+  protected String type;
+  protected Boolean required = new Boolean(false);
 
-  public TaskBlock() {
-    this.tasks = new ArrayList<TaskDto>();
+  public String getProperty() {
+    return property;
   }
-
-  public TaskBlock(List<TaskDto> tasks) {
-    this.tasks = tasks;
+  public void setProperty(String property) {
+    this.property = property;
   }
-
-  public List<TaskDto> getTasks() {
-    return tasks;
+  public String getType() {
+    return type;
   }
-
-  public void setTasks(List<TaskDto> tasks) {
-    this.tasks = tasks;
+  public void setType(String type) {
+    this.type = type;
   }
-
-  public void addTask(TaskDto task) {
-    tasks.add(task);
+  public Boolean isRequired() {
+    return required;
   }
-
-  public TaskDto get(int index) {
-    return tasks.get(index);
-  }
-
-  public int getNrOfTasks() {
-    return tasks.size();
+  public void setRequired(Boolean required) {
+    this.required = required;
   }
 
 }

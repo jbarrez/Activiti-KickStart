@@ -17,8 +17,8 @@ import java.util.List;
 
 import javax.xml.bind.JAXBException;
 
-import org.activiti.kickstart.dto.WorkflowDto;
-import org.activiti.kickstart.dto.WorkflowInfo;
+import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 
 /**
  * This is the service you'll typically use if you want to integrate the Activiti Kickstart functionality. 
@@ -30,25 +30,20 @@ public interface KickstartService {
 	/**
 	 * Deploys the given workflow representation to the configured Activiti engine.
 	 */
-	String deployKickstartWorkflow(WorkflowDto kickstartWorkflowDto) throws JAXBException;
-	
-	/**
-	 * Marshalls the given {@link WorkflowDto} to a BPMN 2.0 compatible XML.
-	 */
-	String marshallWorkflow(WorkflowDto kickstartWorkflowDto) throws JAXBException;
+	String deployKickstartWorkflow(KickstartWorkflow kickstartWorkflowDto) throws JAXBException;
 
 	/**
-	 * Retrieves a list of {@link WorkflowInfo} instances which
+	 * Retrieves a list of {@link KickstartWorkflowInfo} instances which
 	 * correspond with all the processes that are deployed to the configured
 	 * Activiti engine and which can are compatible with KickStart.
 	 */
-	List<WorkflowInfo> findKickstartWorkflowInformation();
+	List<KickstartWorkflowInfo> findKickstartWorkflowInformation();
 
 	/**
 	 * Fetches the process definition for the KickStart workflow from
 	 * the configured Activiti engine data store.
 	 */
-	WorkflowDto findKickstartWorkflowById(String id) throws JAXBException;
+	KickstartWorkflow findKickstartWorkflowById(String id) throws JAXBException;
 
 	/**
 	 * Returns an {@link InputStream} to the process image for the process definition

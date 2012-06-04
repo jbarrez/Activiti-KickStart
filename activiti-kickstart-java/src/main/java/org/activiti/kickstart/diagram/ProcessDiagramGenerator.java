@@ -38,8 +38,9 @@ import org.activiti.kickstart.bpmn20.model.connector.SequenceFlow;
 import org.activiti.kickstart.bpmn20.model.event.EndEvent;
 import org.activiti.kickstart.bpmn20.model.event.StartEvent;
 import org.activiti.kickstart.bpmn20.model.gateway.ParallelGateway;
-import org.activiti.kickstart.dto.WorkflowDto;
-import org.activiti.kickstart.dto.TaskBlock;
+import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.dto.KickstartTaskBlock;
+import org.activiti.kickstart.service.MarshallingService;
 
 /**
  * @author Joram Barrez
@@ -66,7 +67,8 @@ public class ProcessDiagramGenerator {
   protected int TASK_BLOCK_WIDTH = GATEWAY_WIDTH + TASK_WIDTH + SEQUENCE_FLOW_WIDTH + LONG_SEQUENCE_FLOW_WITHOUT_ARROW_WIDTH;
 
   // Instance members
-  protected WorkflowDto adhocWorkflow;
+  protected MarshallingService marshallingService;
+  protected KickstartWorkflow kickstartWorkflow;
 
   // Will be set during image generation
   protected int startX;
@@ -78,9 +80,18 @@ public class ProcessDiagramGenerator {
   protected Map<String, List<SequenceFlow>> incomingSequenceFlowMapping;
   protected Set<String> handledElements;
 
-  public ProcessDiagramGenerator(WorkflowDto adhocWorkflow) {
-    this.adhocWorkflow = adhocWorkflow;
+  public ProcessDiagramGenerator(KickstartWorkflow kickstartWorkflow, MarshallingService marshallingService) {
+    this.kickstartWorkflow = kickstartWorkflow;
+    this.marshallingService = marshallingService;
   }
+
+  public MarshallingService getMarshallingService() {
+	return marshallingService;
+  }
+
+	public void setMarshallingService(MarshallingService marshallingService) {
+		this.marshallingService = marshallingService;
+	}
 
   public InputStream execute() {
 
@@ -92,7 +103,7 @@ public class ProcessDiagramGenerator {
     int height = calculateMaximumHeight() + 50;
     processDiagramCanvas = new ProcessDiagramCanvas(width, height);
 
-    Definitions definitions = adhocWorkflow.toBpmn20Xml();
+    Definitions definitions = marshallingService.convertToBpmn(kickstartWorkflow);
     Process process = getProcess(definitions);
     this.plane = getPlane(definitions);
 
@@ -174,7 +185,7 @@ public class ProcessDiagramGenerator {
 
   protected int calculateMaximumWidth() {
     int width = 0;
-    for (TaskBlock taskBlock : adhocWorkflow.getTaskBlocks()) {
+    for (KickstartTaskBlock taskBlock : kickstartWorkflow.getTaskBlocks()) {
       if (taskBlock.getNrOfTasks() == 1) {
         width += TASK_WIDTH + SEQUENCE_FLOW_WIDTH;
       } else {
@@ -189,7 +200,7 @@ public class ProcessDiagramGenerator {
 
   protected int calculateMaximumHeight() {
     int maxNrOfTasksInOneBlock = 0;
-    for (TaskBlock taskBlock : adhocWorkflow.getTaskBlocks()) {
+    for (KickstartTaskBlock taskBlock : kickstartWorkflow.getTaskBlocks()) {
       if (taskBlock.getNrOfTasks() > maxNrOfTasksInOneBlock) {
         maxNrOfTasksInOneBlock = taskBlock.getNrOfTasks();
       }

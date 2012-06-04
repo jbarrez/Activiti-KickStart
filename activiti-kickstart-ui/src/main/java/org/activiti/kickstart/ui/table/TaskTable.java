@@ -15,8 +15,8 @@ package org.activiti.kickstart.ui.table;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.activiti.kickstart.dto.FormDto;
-import org.activiti.kickstart.dto.UserTaskDto;
+import org.activiti.kickstart.dto.KickstartForm;
+import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.model.TaskFormModel;
 import org.activiti.kickstart.model.TaskFormModelListener;
 import org.activiti.kickstart.ui.ViewManager;
@@ -74,7 +74,7 @@ public class TaskTable extends Table implements TaskFormModelListener {
     setColumnWidth("actions", 170);
   }
 
-  public void addTaskRow(UserTaskDto task) {
+  public void addTaskRow(KickstartUserTask task) {
     Object taskItemId = addTaskRow(null, task.getName(), task.getAssignee(), task.getGroups(), task.getDescription(), task.getStartsWithPrevious());
     if (task.getForm() != null) {
       taskFormModel.addForm(taskItemId, task.getForm());
@@ -132,7 +132,7 @@ public class TaskTable extends Table implements TaskFormModelListener {
   protected HorizontalLayout generateActionButtons(Object taskItemId) {
     HorizontalLayout actionButtons = new HorizontalLayout();
 
-    FormDto form = taskFormModel.getForm(taskItemId);
+    KickstartForm form = taskFormModel.getForm(taskItemId);
     Button formButton = new Button(form == null ? "Create form" : "Edit form");
     formButton.addListener(new ShowFormClickListener(viewManager, taskFormModel, taskItemId));
     formButton.setData(taskItemId);
@@ -151,12 +151,12 @@ public class TaskTable extends Table implements TaskFormModelListener {
     return actionButtons;
   }
 
-  public List<UserTaskDto> getTasks() {
-    List<UserTaskDto> tasks = new ArrayList<UserTaskDto>();
+  public List<KickstartUserTask> getTasks() {
+    List<KickstartUserTask> tasks = new ArrayList<KickstartUserTask>();
     for (Object itemId : getItemIds()) {
       Item item = getItem(itemId);
 
-      UserTaskDto task = new UserTaskDto();
+      KickstartUserTask task = new KickstartUserTask();
       task.setName((String) item.getItemProperty("name").getValue());
       task.setAssignee((String) item.getItemProperty("assignee").getValue());
       task.setGroups((String) item.getItemProperty("groups").getValue());

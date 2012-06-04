@@ -1,8 +1,7 @@
 package org.activiti.kickstart.dto;
 
-import org.activiti.kickstart.bpmn20.model.FlowElement;
 
-public abstract class TaskDto {
+public abstract class KickstartTask {
 
   protected String id;
 
@@ -12,7 +11,7 @@ public abstract class TaskDto {
 
   protected boolean startWithPrevious;
 
-  public TaskDto() {
+  public KickstartTask() {
     super();
   }
 
@@ -47,13 +46,5 @@ public abstract class TaskDto {
   public void setStartWithPrevious(boolean startWithPrevious) {
     this.startWithPrevious = startWithPrevious;
   }
-
-  /**
-   * Creates the Flow element for this BaseTaskDto. Every Dto knows about its
-   * corresponding FlowElement;
-   * 
-   * @return A instance of {@link FlowElement} which represents this Dto in BPMN 2.0
-   */
-  public abstract FlowElement createFlowElement();
-
+  
 }

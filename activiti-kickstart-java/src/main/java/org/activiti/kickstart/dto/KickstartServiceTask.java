@@ -1,9 +1,7 @@
 package org.activiti.kickstart.dto;
 
-import org.activiti.kickstart.bpmn20.model.FlowElement;
-import org.activiti.kickstart.bpmn20.model.activity.type.ServiceTask;
 
-public class ServiceTaskDto extends TaskDto {
+public class KickstartServiceTask extends KickstartTask {
 
   private String className;
 
@@ -32,12 +30,4 @@ public class ServiceTaskDto extends TaskDto {
     this.expression = expression;
   }
 
-  @Override
-  public FlowElement createFlowElement() {
-    ServiceTask serviceTask = new ServiceTask();
-    serviceTask.setDelegateExpression(getDelegateExpression());
-    serviceTask.setClassName(getClassName());
-    serviceTask.setExpression(getExpression());
-    return serviceTask;
-  }
 }

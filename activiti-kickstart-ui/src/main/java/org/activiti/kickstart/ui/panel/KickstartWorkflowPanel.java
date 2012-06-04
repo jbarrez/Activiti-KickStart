@@ -12,9 +12,9 @@
  */
 package org.activiti.kickstart.ui.panel;
 
-import org.activiti.kickstart.dto.TaskDto;
-import org.activiti.kickstart.dto.WorkflowDto;
-import org.activiti.kickstart.dto.UserTaskDto;
+import org.activiti.kickstart.dto.KickstartTask;
+import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ErrorPopupWindow;
 import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
@@ -59,9 +59,9 @@ public class KickstartWorkflowPanel extends Panel {
   // dependencies
   protected ViewManager viewManager;
   protected KickstartService kickStartService;
-  protected WorkflowDto existingAdhocWorkflow;
+  protected KickstartWorkflow existingAdhocWorkflow;
 
-  public KickstartWorkflowPanel(ViewManager viewManager, WorkflowDto existingAdhocWorkflow) {
+  public KickstartWorkflowPanel(ViewManager viewManager, KickstartWorkflow existingAdhocWorkflow) {
     this.viewManager = viewManager;
     this.existingAdhocWorkflow = existingAdhocWorkflow;
     this.saveImage = new ClassResource("images/page_save.png", viewManager.getApplication());
@@ -142,9 +142,9 @@ public class KickstartWorkflowPanel extends Panel {
     if (existingAdhocWorkflow == null) {
       taskTable.addDefaultTaskRow();
     } else {
-      for (TaskDto task : existingAdhocWorkflow.getTasks()) {
-        if(task instanceof UserTaskDto) {
-          taskTable.addTaskRow((UserTaskDto) task);
+      for (KickstartTask task : existingAdhocWorkflow.getTasks()) {
+        if(task instanceof KickstartUserTask) {
+          taskTable.addTaskRow((KickstartUserTask) task);
         }
       }
     }
@@ -209,11 +209,11 @@ public class KickstartWorkflowPanel extends Panel {
     layout.addComponent(footer);
   }
 
-  protected WorkflowDto createAdhocWorkflow() {
-    WorkflowDto adhocWorkflow = new WorkflowDto();
+  protected KickstartWorkflow createAdhocWorkflow() {
+    KickstartWorkflow adhocWorkflow = new KickstartWorkflow();
     adhocWorkflow.setName((String) nameField.getValue());
     adhocWorkflow.setDescription((String) descriptionField.getValue());
-    for (UserTaskDto task : taskTable.getTasks()) {
+    for (KickstartUserTask task : taskTable.getTasks()) {
       adhocWorkflow.addTask(task);
     }
     return adhocWorkflow;

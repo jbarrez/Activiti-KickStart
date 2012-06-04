@@ -36,15 +36,15 @@ import org.activiti.kickstart.bpmn20.model.extension.AbstractExtensionElement;
 import org.activiti.kickstart.bpmn20.model.extension.activiti.ActivitFieldExtensionElement;
 import org.activiti.kickstart.bpmn20.model.extension.activiti.ActivitiFormProperty;
 import org.activiti.kickstart.bpmn20.model.gateway.ParallelGateway;
-import org.activiti.kickstart.dto.TaskDto;
-import org.activiti.kickstart.dto.FormDto;
-import org.activiti.kickstart.dto.FormPropertyDto;
-import org.activiti.kickstart.dto.MailTaskDto;
-import org.activiti.kickstart.dto.ScriptTaskDto;
-import org.activiti.kickstart.dto.ServiceTaskDto;
-import org.activiti.kickstart.dto.UserTaskDto;
-import org.activiti.kickstart.dto.WorkflowDto;
-import org.activiti.kickstart.dto.WorkflowInfo;
+import org.activiti.kickstart.dto.KickstartForm;
+import org.activiti.kickstart.dto.KickstartFormProperty;
+import org.activiti.kickstart.dto.KickstartMailTask;
+import org.activiti.kickstart.dto.KickstartScriptTask;
+import org.activiti.kickstart.dto.KickstartServiceTask;
+import org.activiti.kickstart.dto.KickstartTask;
+import org.activiti.kickstart.dto.KickstartUserTask;
+import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 
 /**
  * 
@@ -79,11 +79,15 @@ public class TransformationServiceImpl implements TransformationService {
 	public void setHistoryService(HistoryService historyService) {
 		this.historyService = historyService;
 	}
+	
+	// -------------------------------------------------------------------------------
+	// BPMN 2.0 --> KICKSTART INTERNAL CLASSES ---------------------------------------
+	// -------------------------------------------------------------------------------
 
-	public List<WorkflowInfo> convertToWorkflowInfoList(List<ProcessDefinition> processDefinitions) {
-		List<WorkflowInfo> infoList = new ArrayList<WorkflowInfo>();
+	public List<KickstartWorkflowInfo> convertToWorkflowInfoList(List<ProcessDefinition> processDefinitions) {
+		List<KickstartWorkflowInfo> infoList = new ArrayList<KickstartWorkflowInfo>();
 		for (ProcessDefinition processDefinition : processDefinitions) {
-			WorkflowInfo workflowInfo = new WorkflowInfo();
+			KickstartWorkflowInfo workflowInfo = new KickstartWorkflowInfo();
 			workflowInfo.setId(processDefinition.getId());
 			workflowInfo.setKey(processDefinition.getKey());
 			workflowInfo.setName(processDefinition.getName());
@@ -109,8 +113,8 @@ public class TransformationServiceImpl implements TransformationService {
 		return infoList;
 	}
 
-	public WorkflowDto convertToWorkflowDto(Definitions definitions) {
-		WorkflowDto adhocWorkflow = new WorkflowDto();
+	public KickstartWorkflow convertToKickstartWorkflow(Definitions definitions) {
+		KickstartWorkflow adhocWorkflow = new KickstartWorkflow();
 
 		for (BaseElement baseElement : definitions.getRootElement()) {
 			if (baseElement instanceof org.activiti.kickstart.bpmn20.model.Process) {
@@ -145,14 +149,14 @@ public class TransformationServiceImpl implements TransformationService {
 				}
 
 				// Follow sequence flow to discover sequence of tasks
-				SequenceFlow currentSequenceFlow = sequenceFlows.get(WorkflowDto.START_NAME).get(0); // Can be only one
-				while (!currentSequenceFlow.getTargetRef().getId().equals(WorkflowDto.END_NAME)) {
+				SequenceFlow currentSequenceFlow = sequenceFlows.get(KickstartWorkflow.START_NAME).get(0); // Can be only one
+				while (!currentSequenceFlow.getTargetRef().getId().equals(KickstartWorkflow.END_NAME)) {
 
 					String targetRef = currentSequenceFlow.getTargetRef().getId();
-					TaskDto taskDto = null;
+					KickstartTask taskDto = null;
 					if (tasks.containsKey(targetRef)) {
 
-						taskDto = convertToTaskDto((Task) currentSequenceFlow.getTargetRef());
+						taskDto = convertToKickstartTask((Task) currentSequenceFlow.getTargetRef());
 						currentSequenceFlow = sequenceFlows.get(currentSequenceFlow.getTargetRef().getId()).get(0); // Can be only one
 						adhocWorkflow.addTask(taskDto);
 
@@ -162,7 +166,7 @@ public class TransformationServiceImpl implements TransformationService {
 						for (int i = 0; i < sequenceFlows.get(targetRef).size(); i++) {
 							SequenceFlow seqFlowOutOfGateway = sequenceFlows.get(targetRef).get(i);
 							task = (Task) seqFlowOutOfGateway.getTargetRef();
-							taskDto = convertToTaskDto(task);
+							taskDto = convertToKickstartTask(task);
 							if (i > 0) {
 								taskDto.setStartWithPrevious(true);
 							}
@@ -182,19 +186,19 @@ public class TransformationServiceImpl implements TransformationService {
 		return adhocWorkflow;
 	}
 
-	public TaskDto convertToTaskDto(final Task task) {
-		TaskDto taskDto = null;
+	public KickstartTask convertToKickstartTask(final Task task) {
+		KickstartTask taskDto = null;
 
 		if (task instanceof UserTask) {
-			taskDto = convertToUserTaskDto((UserTask) task);
+			taskDto = convertToKickstartUserTask((UserTask) task);
 		} else if (task instanceof ServiceTask) {
 			if (((ServiceTask) task).getType() != null && ((ServiceTask) task).getType().equals("mail")) {
-				taskDto = convertToMailTaskDto((ServiceTask) task);
+				taskDto = convertToKickstartMailTask((ServiceTask) task);
 			} else {
-				taskDto = convertToServiceTaskDto((ServiceTask) task);
+				taskDto = convertToKickstartServiceTask((ServiceTask) task);
 			}
 		} else if (task instanceof ScriptTask) {
-			taskDto = convertToScriptTaskDto((ScriptTask) task);
+			taskDto = convertToKickstartScriptTask((ScriptTask) task);
 		}
 
 		handleGeneralTaskDtoProperties(taskDto, task);
@@ -202,7 +206,7 @@ public class TransformationServiceImpl implements TransformationService {
 		return taskDto;
 	}
 
-	private void handleGeneralTaskDtoProperties(TaskDto baseTaskDto, Task task) {
+	private void handleGeneralTaskDtoProperties(KickstartTask baseTaskDto, Task task) {
 		// task id
 		baseTaskDto.setId(task.getId());
 
@@ -215,9 +219,9 @@ public class TransformationServiceImpl implements TransformationService {
 		}
 	}
 
-	public UserTaskDto convertToUserTaskDto(final UserTask userTask) {
+	public KickstartUserTask convertToKickstartUserTask(final UserTask userTask) {
 		
-		UserTaskDto task = new UserTaskDto();
+		KickstartUserTask task = new KickstartUserTask();
 		
 		// Assignment
 		for (ActivityResource activityResource : userTask.getActivityResource()) {
@@ -241,11 +245,11 @@ public class TransformationServiceImpl implements TransformationService {
 		}
 
 		// Task form
-		List<FormPropertyDto> formPropertyDtos = new ArrayList<FormPropertyDto>();
+		List<KickstartFormProperty> formPropertyDtos = new ArrayList<KickstartFormProperty>();
 		if (userTask.getExtensionElements() != null) {
 			for (AbstractExtensionElement extensionElement : userTask.getExtensionElements().getAllElementOfType(ActivitiFormProperty.class)) {
 				ActivitiFormProperty formProperty = (ActivitiFormProperty) extensionElement;
-				FormPropertyDto formPropertyDto = new FormPropertyDto();
+				KickstartFormProperty formPropertyDto = new KickstartFormProperty();
 				formPropertyDto.setProperty(formProperty.getName());
 
 				String formType = formProperty.getType();
@@ -262,7 +266,7 @@ public class TransformationServiceImpl implements TransformationService {
 		}
 
 		if (formPropertyDtos.size() > 0) {
-			FormDto formDto = new FormDto();
+			KickstartForm formDto = new KickstartForm();
 			formDto.setFormProperties(formPropertyDtos);
 			task.setForm(formDto);
 		}
@@ -270,17 +274,17 @@ public class TransformationServiceImpl implements TransformationService {
 		return task;
 	}
 
-	public ServiceTaskDto convertToServiceTaskDto(final ServiceTask serviceTask) {
-		ServiceTaskDto task = new ServiceTaskDto();
+	public KickstartServiceTask convertToKickstartServiceTask(final ServiceTask serviceTask) {
+		KickstartServiceTask task = new KickstartServiceTask();
 		task.setClassName(serviceTask.getClassName());
 		task.setExpression(serviceTask.getExpression());
 		task.setDelegateExpression(serviceTask.getDelegateExpression());
 		return task;
 	}
 
-	public MailTaskDto convertToMailTaskDto(final ServiceTask serviceTask) {
+	public KickstartMailTask convertToKickstartMailTask(final ServiceTask serviceTask) {
 
-		MailTaskDto task = new MailTaskDto();
+		KickstartMailTask task = new KickstartMailTask();
 		
 		List<AbstractExtensionElement> extensionElements = serviceTask.getExtensionElements().getAny();
 		for (AbstractExtensionElement abstractExtensionElement : extensionElements) {
@@ -313,8 +317,8 @@ public class TransformationServiceImpl implements TransformationService {
 		return task;
 	}
 
-	public ScriptTaskDto convertToScriptTaskDto(final ScriptTask serviceTask) {
-		ScriptTaskDto task = new ScriptTaskDto();
+	public KickstartScriptTask convertToKickstartScriptTask(final ScriptTask serviceTask) {
+		KickstartScriptTask task = new KickstartScriptTask();
 		task.setScriptFormat(serviceTask.getScriptFormat());
 		task.setResultVariableName(serviceTask.getResultVariableName());
 		task.setScript(serviceTask.getScript());

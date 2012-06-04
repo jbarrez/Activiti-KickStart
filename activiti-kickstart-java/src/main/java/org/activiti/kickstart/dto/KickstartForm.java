@@ -18,23 +18,23 @@ import java.util.List;
 /**
  * @author Joram Barrez
  */
-public class FormDto {
+public class KickstartForm {
 
-  protected List<FormPropertyDto> formProperties = new ArrayList<FormPropertyDto>();
+  protected List<KickstartFormProperty> formProperties = new ArrayList<KickstartFormProperty>();
 
-  public List<FormPropertyDto> getFormProperties() {
+  public List<KickstartFormProperty> getFormProperties() {
     return formProperties;
   }
-  public void setFormProperties(List<FormPropertyDto> formProperties) {
+  public void setFormProperties(List<KickstartFormProperty> formProperties) {
     this.formProperties = formProperties;
   }
-  public void addFormProperty(FormPropertyDto formProperty) {
+  public void addFormProperty(KickstartFormProperty formProperty) {
     formProperties.add(formProperty);
   }
 
   public String toString() {
     StringBuilder strb = new StringBuilder();
-    for (FormPropertyDto property : formProperties) {
+    for (KickstartFormProperty property : formProperties) {
       strb.append(property.getProperty() + ";");
       strb.append(property.getType() + ";");
       strb.append(property.isRequired());

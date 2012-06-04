@@ -6,23 +6,25 @@ import java.io.InputStream;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.test.ActivitiTestCase;
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
-import org.activiti.kickstart.dto.FormDto;
-import org.activiti.kickstart.dto.FormPropertyDto;
-import org.activiti.kickstart.dto.WorkflowDto;
-import org.activiti.kickstart.dto.MailTaskDto;
-import org.activiti.kickstart.dto.ScriptTaskDto;
-import org.activiti.kickstart.dto.ServiceTaskDto;
-import org.activiti.kickstart.dto.UserTaskDto;
+import org.activiti.kickstart.dto.KickstartForm;
+import org.activiti.kickstart.dto.KickstartFormProperty;
+import org.activiti.kickstart.dto.KickstartMailTask;
+import org.activiti.kickstart.dto.KickstartScriptTask;
+import org.activiti.kickstart.dto.KickstartServiceTask;
+import org.activiti.kickstart.dto.KickstartUserTask;
+import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.junit.Test;
 
 
 public class KickstartServiceImplTest extends ActivitiTestCase {
+	
+	protected MarshallingService marshallingService = ServiceLocator.getMarshallingService();
 
     @Test
     public void testSimpleUserTask() throws Exception {
-        WorkflowDto dto = createSimpleUserTaskWorkflow();
+        KickstartWorkflow dto = createSimpleUserTaskWorkflow();
 
-        String bpmn = ServiceLocator.getDefaultKickStartService().marshallWorkflow(dto); 
+        String bpmn = marshallingService.marshallWorkflow(dto); 
 //        System.out.println(bpmn);
 
         assertTrue(bpmn.indexOf("userTask ") > - 1);
@@ -32,8 +34,8 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
 
     @Test
     public void testSimpleUserTaskImage() throws Exception {
-        WorkflowDto dto = createSimpleUserTaskWorkflow();
-        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto);
+        KickstartWorkflow dto = createSimpleUserTaskWorkflow();
+        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto, marshallingService);
 
         InputStream in = generator.execute();
         assertNotNull(in);
@@ -41,17 +43,17 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     }
 
 
-    private WorkflowDto createSimpleUserTaskWorkflow() {
-        WorkflowDto dto = new WorkflowDto();
+    private KickstartWorkflow createSimpleUserTaskWorkflow() {
+        KickstartWorkflow dto = new KickstartWorkflow();
         dto.setName("One User Task Workflow");
         dto.setDescription("Simple workflow definition containing one user task");
 
-        UserTaskDto taskDto = new UserTaskDto();
+        KickstartUserTask taskDto = new KickstartUserTask();
         taskDto.setName("My First User task");
         taskDto.setDescription("Desc first User task");
 
-        FormDto form = new FormDto();
-        FormPropertyDto property = new FormPropertyDto();
+        KickstartForm form = new KickstartForm();
+        KickstartFormProperty property = new KickstartFormProperty();
         property.setProperty("name");
         property.setType("text");
         form.addFormProperty(property);
@@ -62,9 +64,9 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
 
     @Test
     public void testSimpleServiceTask() throws Exception {
-        WorkflowDto dto = createSimpleServiceTaskWorkflow();
+        KickstartWorkflow dto = createSimpleServiceTaskWorkflow();
 
-        String bpmn = ServiceLocator.getDefaultKickStartService().marshallWorkflow(dto);
+        String bpmn = marshallingService.marshallWorkflow(dto);
         //System.out.println(bpmn);
 
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -75,20 +77,20 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
 
     @Test
     public void testSimpleServiceTaskImage() throws Exception {
-        WorkflowDto dto = createSimpleServiceTaskWorkflow();
-        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto);
+        KickstartWorkflow dto = createSimpleServiceTaskWorkflow();
+        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto, marshallingService);
 
         InputStream in = generator.execute();
         assertNotNull(in);
 //        createFile(in, "c:/temp/service.png");
     }
 
-    private WorkflowDto createSimpleServiceTaskWorkflow() {
-        WorkflowDto dto = new WorkflowDto();
+    private KickstartWorkflow createSimpleServiceTaskWorkflow() {
+        KickstartWorkflow dto = new KickstartWorkflow();
         dto.setName("One Service Task Workflow");
         dto.setDescription("Simple workflow definition containing one service task");
 
-        ServiceTaskDto task = new ServiceTaskDto();
+        KickstartServiceTask task = new KickstartServiceTask();
         task.setName("My First Service task");
         task.setDescription("Desc first Service task");
         task.setDelegateExpression("#{myDelegateExpression}");
@@ -102,9 +104,9 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
 
     @Test
     public void testSimpleEmailTask() throws Exception {
-        WorkflowDto dto = createSimpleEmailTaskWorkflow();
+        KickstartWorkflow dto = createSimpleEmailTaskWorkflow();
         
-        String bpmn = ServiceLocator.getDefaultKickStartService().marshallWorkflow(dto);
+        String bpmn = marshallingService.marshallWorkflow(dto);
         //System.out.println(bpmn);
         
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -115,11 +117,11 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testSimpleEmailTaskWithAllFields() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
+        KickstartWorkflow dto = new KickstartWorkflow();
         dto.setName("One Mail Task Workflow");
         dto.setDescription("Simple workflow definition containing one mail task");
 
-        MailTaskDto task = new MailTaskDto();
+        KickstartMailTask task = new KickstartMailTask();
         task.setId("myId");
         task.setName("My First Mail task");
         task.setDescription("Desc first Mail task");
@@ -148,7 +150,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         
         dto.addTask(task);
         
-        String bpmn = ServiceLocator.getDefaultKickStartService().marshallWorkflow(dto);
+        String bpmn = marshallingService.marshallWorkflow(dto);
         //System.out.println(bpmn);
         
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -194,11 +196,11 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testEmailTaskWithSomeFieldsOnly() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
+        KickstartWorkflow dto = new KickstartWorkflow();
         dto.setName("One Mail Task Workflow");
         dto.setDescription("Simple workflow definition containing one mail task");
 
-        MailTaskDto task = new MailTaskDto();
+        KickstartMailTask task = new KickstartMailTask();
         task.setId("myId");
         task.setName("My First Mail task");
         task.setDescription("Desc first Mail task");
@@ -213,7 +215,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         
         dto.addTask(task);
         
-        String bpmn = ServiceLocator.getDefaultKickStartService().marshallWorkflow(dto);
+        String bpmn = marshallingService.marshallWorkflow(dto);
         //System.out.println(bpmn);
         
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -239,19 +241,19 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testSimpleEmailTaskImage() throws Exception {
-        WorkflowDto dto = createSimpleEmailTaskWorkflow();
-        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto);
+        KickstartWorkflow dto = createSimpleEmailTaskWorkflow();
+        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto, marshallingService);
         
         InputStream in = generator.execute();
         assertNotNull(in);
     }
 
-    private WorkflowDto createSimpleEmailTaskWorkflow() {
-        WorkflowDto dto = new WorkflowDto();
+    private KickstartWorkflow createSimpleEmailTaskWorkflow() {
+        KickstartWorkflow dto = new KickstartWorkflow();
         dto.setName("One Mail Task Workflow");
         dto.setDescription("Simple workflow definition containing one mail task");
 
-        MailTaskDto task = new MailTaskDto();
+        KickstartMailTask task = new KickstartMailTask();
         task.setId("myId");
         task.setName("My First Mail task");
         task.setDescription("Desc first Mail task");
@@ -265,22 +267,22 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testDeployAndFindUserTaskWorkflow() throws Exception {
-        WorkflowDto dto = createSimpleUserTaskWorkflow();
+        KickstartWorkflow dto = createSimpleUserTaskWorkflow();
         KickstartServiceImpl service = (KickstartServiceImpl) ServiceLocator.getDefaultKickStartService();
         
-        String bpmn = ServiceLocator.getDefaultKickStartService().marshallWorkflow(dto);
+        String bpmn = marshallingService.marshallWorkflow(dto);
         System.out.println(bpmn);
 
 
         String deploymentId = service.deployKickstartWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        WorkflowDto deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
 
-        assertTrue("Task should be a UserTask", deployedDto.getTasks().get(0) instanceof UserTaskDto);
-        UserTaskDto task = (UserTaskDto) deployedDto.getTasks().get(0);
+        assertTrue("Task should be a UserTask", deployedDto.getTasks().get(0) instanceof KickstartUserTask);
+        KickstartUserTask task = (KickstartUserTask) deployedDto.getTasks().get(0);
         assertEquals("task_1", task.getId());
         assertEquals("My First User task", task.getName());
         assertEquals("Desc first User task", task.getDescription());
@@ -288,18 +290,18 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
 
     @Test
     public void testDeployAndFindServiceTaskWorkflow() throws Exception {
-        WorkflowDto dto = createSimpleServiceTaskWorkflow();
+        KickstartWorkflow dto = createSimpleServiceTaskWorkflow();
         KickstartService service = ServiceLocator.getDefaultKickStartService();
 
         String deploymentId = service.deployKickstartWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        WorkflowDto deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
 
-        assertTrue("Task should be a ServiceTask", deployedDto.getTasks().get(0) instanceof ServiceTaskDto);
-        ServiceTaskDto task = (ServiceTaskDto) deployedDto.getTasks().get(0);
+        assertTrue("Task should be a ServiceTask", deployedDto.getTasks().get(0) instanceof KickstartServiceTask);
+        KickstartServiceTask task = (KickstartServiceTask) deployedDto.getTasks().get(0);
         assertEquals("task_1", task.getId());
         assertEquals("#{myDelegateExpression}", task.getDelegateExpression());
         assertEquals("#{my.favorite.expression}", task.getExpression());
@@ -308,18 +310,18 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testDeployAndFindEmailTaskWorkflowWithSomeElements() throws Exception {
-        WorkflowDto dto = createSimpleEmailTaskWorkflow();
+        KickstartWorkflow dto = createSimpleEmailTaskWorkflow();
         KickstartService service = ServiceLocator.getDefaultKickStartService();
 
         String deploymentId = service.deployKickstartWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        WorkflowDto deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
 
-        assertTrue("Task should be a MailTaskDto", deployedDto.getTasks().get(0) instanceof MailTaskDto);
-        MailTaskDto task = (MailTaskDto) deployedDto.getTasks().get(0);
+        assertTrue("Task should be a MailTaskDto", deployedDto.getTasks().get(0) instanceof KickstartMailTask);
+        KickstartMailTask task = (KickstartMailTask) deployedDto.getTasks().get(0);
         assertEquals("task_1", task.getId());
         assertEquals("test@mycompany.com", task.getTo().getStringValue());
         assertEquals("My text content", task.getText().getStringValue());
@@ -339,12 +341,12 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testDeployAndFindEmailTaskWorkflowWithAllElements() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
+        KickstartWorkflow dto = new KickstartWorkflow();
         dto.setName("One Mail Task Workflow");
         dto.setDescription("Simple workflow definition containing one mail task");
         
         
-        MailTaskDto taskDto = new MailTaskDto();
+        KickstartMailTask taskDto = new KickstartMailTask();
         taskDto.setName("My Email Task");
         taskDto.setDescription("my email task description");
         taskDto.getTo().setStringValue("you@yourcompany.com");
@@ -374,13 +376,13 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
 
         String deploymentId = service.deployKickstartWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        WorkflowDto deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
 
-        assertTrue("Task should be a MailTaskDto", deployedDto.getTasks().get(0) instanceof MailTaskDto);
-        MailTaskDto task = (MailTaskDto) deployedDto.getTasks().get(0);
+        assertTrue("Task should be a MailTaskDto", deployedDto.getTasks().get(0) instanceof KickstartMailTask);
+        KickstartMailTask task = (KickstartMailTask) deployedDto.getTasks().get(0);
         assertEquals("task_1", task.getId());
         assertEquals("you@yourcompany.com", task.getTo().getStringValue());
         assertEquals("${to_email}", task.getTo().getExpression());
@@ -415,11 +417,11 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testTwoParallelServiceTasks() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
+        KickstartWorkflow dto = new KickstartWorkflow();
         dto.setName("One Service Task Workflow");
         dto.setDescription("Simple workflow definition containing one service task");
 
-        ServiceTaskDto task1 = new ServiceTaskDto();
+        KickstartServiceTask task1 = new KickstartServiceTask();
         task1.setId("myFirstId");
         task1.setName("My First Service task");
         task1.setDescription("Desc first Service task");
@@ -428,7 +430,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         task1.setExpression("#{my.favorite.first.expression}");
         dto.addTask(task1);
         
-        ServiceTaskDto task2 = new ServiceTaskDto();
+        KickstartServiceTask task2 = new KickstartServiceTask();
         task2.setId("mySecondId");
         task2.setName("My Second Service task");
         task2.setDescription("Desc Second Service task");
@@ -438,14 +440,14 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         task2.setStartWithPrevious(true);
         dto.addTask(task2);
         
-        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto);
+        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto, marshallingService);
         
         InputStream in = generator.execute();
         assertNotNull(in);
         
 //        createFile(in, "c:/temp/parallel.png");
         
-        String bpmn = ServiceLocator.getDefaultKickStartService().marshallWorkflow(dto);
+        String bpmn = marshallingService.marshallWorkflow(dto);
         //System.out.println(bpmn);
         
         assertTrue(bpmn.indexOf("serviceTask ") > - 1);
@@ -461,9 +463,9 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
 //      <script>#{echo}</script>
 //    </scriptTask>
         
-        WorkflowDto dto = createSimpleScriptTask();
+        KickstartWorkflow dto = createSimpleScriptTask();
         
-        String bpmn = ServiceLocator.getDefaultKickStartService().marshallWorkflow(dto);
+        String bpmn = marshallingService.marshallWorkflow(dto);
         //System.out.println(bpmn);
 
         assertTrue(bpmn.indexOf("scriptTask ") > - 1);
@@ -474,20 +476,20 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testSimpleScriptTaskImage() throws Exception {
-        WorkflowDto dto = createSimpleScriptTask();
-        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto);
+        KickstartWorkflow dto = createSimpleScriptTask();
+        ProcessDiagramGenerator generator = new ProcessDiagramGenerator(dto, marshallingService);
 
         InputStream in = generator.execute();
         assertNotNull(in);
 //        createFile(in, "c:/temp/script.png");
     }
     
-    private WorkflowDto createSimpleScriptTask() {
-        WorkflowDto dto = new WorkflowDto();
+    private KickstartWorkflow createSimpleScriptTask() {
+        KickstartWorkflow dto = new KickstartWorkflow();
         dto.setName("One Script Task Workflow");
         dto.setDescription("Simple workflow definition containing one script task");
         
-        ScriptTaskDto scriptDto = new ScriptTaskDto();
+        KickstartScriptTask scriptDto = new KickstartScriptTask();
         scriptDto.setId("theScriptTask");
         scriptDto.setName("Execute script");
         
@@ -501,18 +503,18 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     
     @Test
     public void testDeployAndFindScriptTaskWorkflow() throws Exception {
-        WorkflowDto dto = createSimpleScriptTask();
+        KickstartWorkflow dto = createSimpleScriptTask();
         KickstartServiceImpl service = (KickstartServiceImpl) ServiceLocator.getDefaultKickStartService();
 
         String deploymentId = service.deployKickstartWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        WorkflowDto deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
 
-        assertTrue("Task should be a ScriptTask", deployedDto.getTasks().get(0) instanceof ScriptTaskDto);
-        ScriptTaskDto task = (ScriptTaskDto) deployedDto.getTasks().get(0);
+        assertTrue("Task should be a ScriptTask", deployedDto.getTasks().get(0) instanceof KickstartScriptTask);
+        KickstartScriptTask task = (KickstartScriptTask) deployedDto.getTasks().get(0);
         assertEquals("task_1", task.getId());
         assertEquals("juel", task.getScriptFormat());
         assertEquals("myVar", task.getResultVariableName());

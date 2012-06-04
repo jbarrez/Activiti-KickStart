@@ -3,6 +3,8 @@ package org.activiti.kickstart.dto;
 import static org.junit.Assert.*;
 
 import org.activiti.kickstart.bpmn20.model.activity.type.ScriptTask;
+import org.activiti.kickstart.service.MarshallingService;
+import org.activiti.kickstart.service.ServiceLocator;
 import org.junit.Test;
 
 
@@ -15,7 +17,7 @@ public class ScriptTaskDtoTest {
 //      <script>#{echo}</script>
 //    </scriptTask>
         
-        ScriptTaskDto dto = new ScriptTaskDto();
+        KickstartScriptTask dto = new KickstartScriptTask();
         dto.setId("theScriptTask");
         dto.setName("Execute script");
         
@@ -23,7 +25,8 @@ public class ScriptTaskDtoTest {
         dto.setResultVariableName("myVar");
         dto.setScript("#{echo}");
         
-        ScriptTask scriptTask = (ScriptTask) dto.createFlowElement();
+        MarshallingService marshallingService = ServiceLocator.getMarshallingService();
+        ScriptTask scriptTask = marshallingService.convertToBPMN(dto);
         assertEquals("juel", scriptTask.getScriptFormat());
         assertEquals("myVar", scriptTask.getResultVariableName());
         assertEquals("#{echo}", scriptTask.getScript());

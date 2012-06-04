@@ -25,13 +25,16 @@ import org.activiti.engine.ProcessEngines;
  */
 public class ServiceLocator {
 
-	protected static KickstartService instance;
+	protected static KickstartService KICKSTARTSERVICE_INSTANCE;
+	
+	protected static MarshallingService MARSHALLINGSERVICE_INSTANCE;
 
 	public static KickstartService getDefaultKickStartService() {
-		if (instance == null) {
-			synchronized (ServiceLocator.class) {
-				if (instance == null) {
+		if (KICKSTARTSERVICE_INSTANCE == null) {
+			synchronized (KickstartService.class) {
+				if (KICKSTARTSERVICE_INSTANCE == null) {
 					KickstartServiceImpl kickstartService = new KickstartServiceImpl();
+					
 					kickstartService.setRepositoryService(ProcessEngines.getDefaultProcessEngine().getRepositoryService());
 					
 					TransformationServiceImpl transformationService = new TransformationServiceImpl();
@@ -42,11 +45,25 @@ public class ServiceLocator {
 					transformationService.setFormTransformationService(formTransformationService);
 					kickstartService.setTransformationService(transformationService);
 					
-					instance = kickstartService;
+					MarshallingService marshallingService = getMarshallingService();
+					kickstartService.setMarshallingService(marshallingService);
+					
+					KICKSTARTSERVICE_INSTANCE = kickstartService;
 				}
 			}
 		}
-		return instance;
+		return KICKSTARTSERVICE_INSTANCE;
+	}
+	
+	public static MarshallingService getMarshallingService() {
+		if (MARSHALLINGSERVICE_INSTANCE == null) {
+			synchronized (MarshallingService.class) {
+				if (MARSHALLINGSERVICE_INSTANCE == null) {
+					MARSHALLINGSERVICE_INSTANCE = new MarshallingServiceImpl();
+				}
+			}
+		}
+		return MARSHALLINGSERVICE_INSTANCE;
 	}
 
 }

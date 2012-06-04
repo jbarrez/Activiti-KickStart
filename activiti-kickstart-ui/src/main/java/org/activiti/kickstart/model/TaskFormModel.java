@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.activiti.kickstart.dto.FormDto;
+import org.activiti.kickstart.dto.KickstartForm;
 
 /**
  * @author Joram Barrez
@@ -27,9 +27,9 @@ public class TaskFormModel {
   protected List<TaskFormModelListener> formModelListeners = new ArrayList<TaskFormModelListener>();
 
   /* Mapping id of task in taskTable <-> FormDto */
-  protected Map<Object, FormDto> forms = new HashMap<Object, FormDto>();
+  protected Map<Object, KickstartForm> forms = new HashMap<Object, KickstartForm>();
 
-  public void addForm(Object taskItemId, FormDto form) {
+  public void addForm(Object taskItemId, KickstartForm form) {
     forms.put(taskItemId, form);
     fireFormAdded(taskItemId);
   }
@@ -39,7 +39,7 @@ public class TaskFormModel {
     fireFormRemoved(taskItemId);
   }
 
-  public FormDto getForm(Object id) {
+  public KickstartForm getForm(Object id) {
     return forms.get(id);
   }
 

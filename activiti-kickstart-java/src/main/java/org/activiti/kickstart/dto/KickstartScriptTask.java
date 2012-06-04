@@ -1,9 +1,7 @@
 package org.activiti.kickstart.dto;
 
-import org.activiti.kickstart.bpmn20.model.FlowElement;
-import org.activiti.kickstart.bpmn20.model.activity.type.ScriptTask;
 
-public class ScriptTaskDto extends TaskDto {
+public class KickstartScriptTask extends KickstartTask {
 
   private String scriptFormat;
 
@@ -32,12 +30,4 @@ public class ScriptTaskDto extends TaskDto {
     this.script = script;
   }
 
-  @Override
-  public FlowElement createFlowElement() {
-    ScriptTask task = new ScriptTask();
-    task.setScriptFormat(getScriptFormat());
-    task.setScript(getScript());
-    task.setResultVariableName(getResultVariableName());
-    return task;
-  }
 }

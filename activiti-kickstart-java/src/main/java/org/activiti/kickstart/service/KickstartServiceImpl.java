@@ -13,12 +13,10 @@
 package org.activiti.kickstart.service;
 
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.List;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 import org.activiti.engine.RepositoryService;
@@ -28,8 +26,8 @@ import org.activiti.engine.repository.DeploymentBuilder;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.kickstart.bpmn20.model.Definitions;
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
-import org.activiti.kickstart.dto.WorkflowDto;
-import org.activiti.kickstart.dto.WorkflowInfo;
+import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 
 /**
  * @author Joram Barrez
@@ -38,7 +36,10 @@ public class KickstartServiceImpl implements KickstartService {
 
 	protected RepositoryService repositoryService;
 	protected TransformationService transformationService;
+	protected MarshallingService marshallingService;
 
+	// Getters and Setters //////////////////////////////////////////////////////////////
+	
 	public RepositoryService getRepositoryService() {
 		return repositoryService;
 	}
@@ -54,33 +55,37 @@ public class KickstartServiceImpl implements KickstartService {
 	public void setTransformationService(TransformationService transformationService) {
 		this.transformationService = transformationService;
 	}
+	
+	public MarshallingService getMarshallingService() {
+		return marshallingService;
+	}
+	
+	public void setMarshallingService(MarshallingService marshallingService) {
+		this.marshallingService = marshallingService;
+	}
+	
+	
+	// Kickstart operations //////////////////////////////////////////////////////////////
 
-	public String deployKickstartWorkflow(WorkflowDto kickstartWorkflow) throws JAXBException {
+
+	public String deployKickstartWorkflow(KickstartWorkflow kickstartWorkflow) throws JAXBException {
 		String deploymentName = "Process " + kickstartWorkflow.getName();
 		String bpmn20XmlResourceName = generateBpmnResourceName(kickstartWorkflow.getName());
 		DeploymentBuilder deploymentBuilder = repositoryService.createDeployment().name(deploymentName);
 
 		// png image (must go first, since it will add DI to the process xml)
-		ProcessDiagramGenerator diagramGenerator = new ProcessDiagramGenerator(kickstartWorkflow);
+		ProcessDiagramGenerator diagramGenerator = new ProcessDiagramGenerator(kickstartWorkflow, marshallingService);
 		deploymentBuilder.addInputStream(bpmn20XmlResourceName.replace(".bpmn20.xml", ".png"), diagramGenerator.execute());
 
 		// bpmn 2.0 xml
-		deploymentBuilder.addString(bpmn20XmlResourceName,	marshallWorkflow(kickstartWorkflow));
+		deploymentBuilder.addString(bpmn20XmlResourceName,	marshallingService.marshallWorkflow(kickstartWorkflow));
 
 		// deploy the whole package
 		Deployment deployment = deploymentBuilder.deploy();
 		return deployment.getId();
 	}
 
-	public String marshallWorkflow(WorkflowDto kickstartWorkflowDto) throws JAXBException {
-		JAXBContext jaxbContext = JAXBContext.newInstance(Definitions.class);
-		Marshaller marshaller = jaxbContext.createMarshaller();
-		StringWriter writer = new StringWriter();
-		marshaller.marshal(kickstartWorkflowDto.toBpmn20Xml(), writer);
-		return writer.toString();
-	}
-
-	public List<WorkflowInfo> findKickstartWorkflowInformation() {
+	public List<KickstartWorkflowInfo> findKickstartWorkflowInformation() {
 		List<ProcessDefinition> processDefinitions = repositoryService
 				.createProcessDefinitionQuery()
 				.processDefinitionKeyLike("adhoc_%")
@@ -89,7 +94,7 @@ public class KickstartServiceImpl implements KickstartService {
 		return transformationService.convertToWorkflowInfoList(processDefinitions);
 	}
 
-	public WorkflowDto findKickstartWorkflowById(String id)
+	public KickstartWorkflow findKickstartWorkflowById(String id)
 			throws JAXBException {
 		// Get process definition for key
 		ProcessDefinition processDefinition = repositoryService
@@ -110,7 +115,7 @@ public class KickstartServiceImpl implements KickstartService {
 		}
 
 		// Convert JAXB to internal model
-		return transformationService.convertToWorkflowDto( definitions);
+		return transformationService.convertToKickstartWorkflow( definitions);
 	}
 
 	public InputStream getProcessImage(String processDefinitionId) {

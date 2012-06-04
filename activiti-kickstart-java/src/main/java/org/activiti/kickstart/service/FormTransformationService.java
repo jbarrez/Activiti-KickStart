@@ -12,10 +12,10 @@
  */
 package org.activiti.kickstart.service;
 
-import org.activiti.kickstart.dto.FormDto;
+import org.activiti.kickstart.dto.KickstartForm;
 
 /**
- * Implementations of this interface are responsible for transforming a {@link FormDto} to
+ * Implementations of this interface are responsible for transforming a {@link KickstartForm} to
  * something that is executable by the targetted system.
  * 
  * The reason why the transformation of the forms is separated from the {@link TransformationService},

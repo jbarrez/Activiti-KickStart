@@ -10,10 +10,11 @@ import java.util.List;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.test.ActivitiTestCase;
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
-import org.activiti.kickstart.dto.TaskDto;
-import org.activiti.kickstart.dto.UserTaskDto;
-import org.activiti.kickstart.dto.WorkflowDto;
+import org.activiti.kickstart.dto.KickstartTask;
+import org.activiti.kickstart.dto.KickstartUserTask;
+import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.service.KickstartService;
+import org.activiti.kickstart.service.MarshallingServiceImpl;
 import org.activiti.kickstart.service.ServiceLocator;
 import org.junit.After;
 import org.junit.Test;
@@ -37,14 +38,14 @@ public class KickstartTest extends ActivitiTestCase {
 
     @Test
     public void testAdhocWorkflowDiagram() throws Exception {
-        WorkflowDto wf = new WorkflowDto();
+        KickstartWorkflow wf = new KickstartWorkflow();
         wf.setName("Test process");
         wf.setTasks(getTaskList());
 
         assertEquals("Test process", wf.getName());
         assertEquals(2, wf.getTasks().size());
 
-        ProcessDiagramGenerator diagramGenerator = new ProcessDiagramGenerator(wf);
+        ProcessDiagramGenerator diagramGenerator = new ProcessDiagramGenerator(wf, new MarshallingServiceImpl());
         InputStream diagram = diagramGenerator.execute();
         byte[] data = getBytesFromInputStream(diagram);
 
@@ -57,7 +58,7 @@ public class KickstartTest extends ActivitiTestCase {
 
     @Test
     public void testAdhocWorkflowDeployment() throws Exception {
-        WorkflowDto wf = new WorkflowDto();
+        KickstartWorkflow wf = new KickstartWorkflow();
         wf.setName("Test process");
         wf.setTasks(getTaskList());
 
@@ -75,15 +76,15 @@ public class KickstartTest extends ActivitiTestCase {
         assertEquals("Test process", wf.getName());
     }
 
-    private List<TaskDto> getTaskList() {
-        List<TaskDto> tasks = new ArrayList<TaskDto>();
-        UserTaskDto task = new UserTaskDto();
+    private List<KickstartTask> getTaskList() {
+        List<KickstartTask> tasks = new ArrayList<KickstartTask>();
+        KickstartUserTask task = new KickstartUserTask();
         task.setId("T1");
         task.setName("Test 1");
         task.setDescription("First Task");
         tasks.add(task);
 
-        task = new UserTaskDto();
+        task = new KickstartUserTask();
         task.setId("T2");
         task.setName("Test 2");
         task.setDescription("Second Task");

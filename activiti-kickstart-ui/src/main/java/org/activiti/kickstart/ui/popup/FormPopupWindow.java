@@ -12,8 +12,8 @@
  */
 package org.activiti.kickstart.ui.popup;
 
-import org.activiti.kickstart.dto.FormDto;
-import org.activiti.kickstart.dto.FormPropertyDto;
+import org.activiti.kickstart.dto.KickstartForm;
+import org.activiti.kickstart.dto.KickstartFormProperty;
 import org.activiti.kickstart.ui.table.PropertyTable;
 import org.activiti.kickstart.model.TaskFormModel;
 
@@ -77,7 +77,7 @@ public class FormPopupWindow extends Window {
       private static final long serialVersionUID = -2906886872414089331L;
 
       public void buttonClick(ClickEvent event) {
-        FormDto form = createForm();
+        KickstartForm form = createForm();
         formModel.addForm(taskItemId, form);
         close();
       }
@@ -100,10 +100,10 @@ public class FormPopupWindow extends Window {
     layout.addComponent(buttons);
   }
 
-  public FormDto createForm() {
-    FormDto formDto = new FormDto();
+  public KickstartForm createForm() {
+    KickstartForm formDto = new KickstartForm();
     for (Object itemId : propertyTable.getItemIds()) {
-      FormPropertyDto formProperty = new FormPropertyDto();
+      KickstartFormProperty formProperty = new KickstartFormProperty();
       formProperty.setProperty((String) propertyTable.getItem(itemId).getItemProperty("property").getValue());
       formProperty.setType((String) ((ComboBox) propertyTable.getItem(itemId).getItemProperty("type").getValue()).getValue());
       formProperty.setRequired((Boolean) ((CheckBox) propertyTable.getItem(itemId).getItemProperty("required").getValue()).getValue());
@@ -113,11 +113,11 @@ public class FormPopupWindow extends Window {
   }
 
   protected void fillFormFields() {
-    FormDto form = formModel.getForm(taskItemId);
+    KickstartForm form = formModel.getForm(taskItemId);
     if (form == null) {
       propertyTable.addPropertyRow();
     } else {
-      for (FormPropertyDto property : form.getFormProperties()) {
+      for (KickstartFormProperty property : form.getFormProperties()) {
         propertyTable.addPropertyRow(property.getProperty(), property.getType(), property.isRequired());
       }
     }

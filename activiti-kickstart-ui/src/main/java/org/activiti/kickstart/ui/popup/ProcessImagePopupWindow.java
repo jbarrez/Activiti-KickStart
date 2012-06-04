@@ -16,10 +16,10 @@ import java.io.InputStream;
 import java.util.UUID;
 
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
-import org.activiti.kickstart.dto.WorkflowDto;
-import org.activiti.kickstart.ui.ViewManager;
+import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.ServiceLocator;
+import org.activiti.kickstart.ui.ViewManager;
 
 import com.vaadin.terminal.StreamResource;
 import com.vaadin.terminal.StreamResource.StreamSource;
@@ -39,23 +39,23 @@ public class ProcessImagePopupWindow extends Window {
   protected static final String TITLE = "Process image";
 
   protected ViewManager viewManager;
-  protected WorkflowDto adhocWorkflow;
+  protected KickstartWorkflow kickstartWorkflow;
   protected String processDefinitionId;
-  protected KickstartService adhocWorkflowService;
+  protected KickstartService kickstartService;
 
   public ProcessImagePopupWindow(ViewManager viewManager, String processDefinitionId) {
     this.processDefinitionId = processDefinitionId;
     init(viewManager);
   }
 
-  public ProcessImagePopupWindow(ViewManager viewManager, WorkflowDto adhocWorkflow) {
-    this.adhocWorkflow = adhocWorkflow;
+  public ProcessImagePopupWindow(ViewManager viewManager, KickstartWorkflow adhocWorkflow) {
+    this.kickstartWorkflow = adhocWorkflow;
     init(viewManager);
   }
 
   public void init(ViewManager viewManager) {
     this.viewManager = viewManager;
-    this.adhocWorkflowService = ServiceLocator.getDefaultKickStartService();
+    this.kickstartService = ServiceLocator.getDefaultKickStartService();
     initUi();
   }
 
@@ -73,11 +73,11 @@ public class ProcessImagePopupWindow extends Window {
         private static final long serialVersionUID = -8875067466181823014L;
 
         public InputStream getStream() {
-          return adhocWorkflowService.getProcessImage(processDefinitionId);
+          return kickstartService.getProcessImage(processDefinitionId);
         }
       };
-    } else if (adhocWorkflow != null) {
-      final ProcessDiagramGenerator converter = new ProcessDiagramGenerator(adhocWorkflow);
+    } else if (kickstartWorkflow != null) {
+      final ProcessDiagramGenerator converter = new ProcessDiagramGenerator(kickstartWorkflow, ServiceLocator.getMarshallingService());
       streamSource = new StreamSource() {
 
         private static final long serialVersionUID = 239500411112658830L;

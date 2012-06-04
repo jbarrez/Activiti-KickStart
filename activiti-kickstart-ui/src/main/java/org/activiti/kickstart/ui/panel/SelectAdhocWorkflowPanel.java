@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
-import org.activiti.kickstart.dto.WorkflowInfo;
+import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 import org.activiti.kickstart.service.KickstartService;
@@ -115,8 +115,8 @@ public class SelectAdhocWorkflowPanel extends Panel {
   }
 
   protected void initWorkflowTableContents() {
-    List<WorkflowInfo> processDefinitions = adhocWorkflowService.findKickstartWorkflowInformation();
-    for (final WorkflowInfo infoDto : processDefinitions) {
+    List<KickstartWorkflowInfo> processDefinitions = adhocWorkflowService.findKickstartWorkflowInformation();
+    for (final KickstartWorkflowInfo infoDto : processDefinitions) {
       Item workflowItem = workflowTable.getItem(workflowTable.addItem());
       Button nameButton = new Button(infoDto.getName());
       nameButton.setStyleName("link");

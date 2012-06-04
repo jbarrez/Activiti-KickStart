@@ -17,7 +17,7 @@ import java.util.Date;
 /**
  * @author Joram Barrez
  */
-public class WorkflowInfo {
+public class KickstartWorkflowInfo {
 
   protected String id;
   protected String key;

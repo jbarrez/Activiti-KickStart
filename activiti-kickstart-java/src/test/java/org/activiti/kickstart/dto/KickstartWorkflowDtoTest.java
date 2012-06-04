@@ -11,24 +11,34 @@ import org.activiti.kickstart.bpmn20.model.activity.type.ServiceTask;
 import org.activiti.kickstart.bpmn20.model.activity.type.UserTask;
 import org.activiti.kickstart.bpmn20.model.bpmndi.BPMNPlane;
 import org.activiti.kickstart.bpmn20.model.extension.activiti.ActivitFieldExtensionElement;
+import org.activiti.kickstart.service.MarshallingService;
+import org.activiti.kickstart.service.MarshallingServiceImpl;
+import org.junit.Before;
 import org.junit.Test;
 
 
 public class KickstartWorkflowDtoTest {
+	
+	protected MarshallingService marshallingService;
+	
+	@Before
+	public void setup() {
+		this.marshallingService = new MarshallingServiceImpl();
+	}
 
     @Test
     public void testSimpleUserTask() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
-        dto.setName("One User Task Workflow");
-        dto.setDescription("Simple workflow definition containing one user task");
+        KickstartWorkflow kickstartWorkflow = new KickstartWorkflow();
+        kickstartWorkflow.setName("One User Task Workflow");
+        kickstartWorkflow.setDescription("Simple workflow definition containing one user task");
 
-        TaskDto task = new UserTaskDto();
+        KickstartTask task = new KickstartUserTask();
         task.setId("myId");
         task.setName("My First User task");
         task.setDescription("Desc first User task");
-        dto.addTask(task);
+        kickstartWorkflow.addTask(task);
         
-        Definitions def = dto.toBpmn20Xml();
+        Definitions def = marshallingService.convertToBpmn(kickstartWorkflow);
         BPMNPlane bpmnPlane = def.getDiagram().get(0).getBPMNPlane();
         List<FlowElement> flowElements = ((Process) bpmnPlane.getBpmnElement()).getFlowElement();
         
@@ -46,20 +56,20 @@ public class KickstartWorkflowDtoTest {
     
     @Test
     public void testSimpleServiceTask() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
-        dto.setName("One Service Task Workflow");
-        dto.setDescription("Simple workflow definition containing one service task");
+        KickstartWorkflow kickstartWorkflow = new KickstartWorkflow();
+        kickstartWorkflow.setName("One Service Task Workflow");
+        kickstartWorkflow.setDescription("Simple workflow definition containing one service task");
 
-        ServiceTaskDto task = new ServiceTaskDto();
+        KickstartServiceTask task = new KickstartServiceTask();
         task.setId("myId");
         task.setName("My First Service task");
         task.setDescription("Desc first Service task");
         task.setDelegateExpression("#{myDelegateExpression}");
         task.setClassName("de.test.MyClass");
         task.setExpression("#{my.favorite.expression}");
-        dto.addTask(task);
+        kickstartWorkflow.addTask(task);
         
-        Definitions def = dto.toBpmn20Xml();
+        Definitions def = marshallingService.convertToBpmn(kickstartWorkflow);
         BPMNPlane bpmnPlane = def.getDiagram().get(0).getBPMNPlane();
         List<FlowElement> flowElements = ((Process) bpmnPlane.getBpmnElement()).getFlowElement();
         
@@ -82,18 +92,18 @@ public class KickstartWorkflowDtoTest {
     
     @Test
     public void testSimpleEmailTask() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
-        dto.setName("One Service Task Workflow");
-        dto.setDescription("Simple workflow definition containing one service task");
+        KickstartWorkflow kickstartWorkflow = new KickstartWorkflow();
+        kickstartWorkflow.setName("One Service Task Workflow");
+        kickstartWorkflow.setDescription("Simple workflow definition containing one service task");
 
-        MailTaskDto task = new MailTaskDto();
+        KickstartMailTask task = new KickstartMailTask();
         task.setId("myId");
         task.setName("My First Mail task");
         task.setDescription("Desc first Mail task");
         task.getTo().setStringValue("my favorite recipient");
-        dto.addTask(task);
+        kickstartWorkflow.addTask(task);
         
-        Definitions def = dto.toBpmn20Xml();
+        Definitions def = marshallingService.convertToBpmn(kickstartWorkflow);
         BPMNPlane bpmnPlane = def.getDiagram().get(0).getBPMNPlane();
         List<FlowElement> flowElements = ((Process) bpmnPlane.getBpmnElement()).getFlowElement();
         
@@ -120,20 +130,20 @@ public class KickstartWorkflowDtoTest {
     
     @Test
     public void testTwoParallelServiceTasks() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
-        dto.setName("One Service Task Workflow");
-        dto.setDescription("Simple workflow definition containing one service task");
+        KickstartWorkflow kickstartWorkflow = new KickstartWorkflow();
+        kickstartWorkflow.setName("One Service Task Workflow");
+        kickstartWorkflow.setDescription("Simple workflow definition containing one service task");
 
-        ServiceTaskDto task1 = new ServiceTaskDto();
+        KickstartServiceTask task1 = new KickstartServiceTask();
         task1.setId("myFirstId");
         task1.setName("My First Service task");
         task1.setDescription("Desc first Service task");
         task1.setDelegateExpression("#{myFirstDelegateExpression}");
         task1.setClassName("de.test.MyFirstClass");
         task1.setExpression("#{my.favorite.first.expression}");
-        dto.addTask(task1);
+        kickstartWorkflow.addTask(task1);
         
-        ServiceTaskDto task2 = new ServiceTaskDto();
+        KickstartServiceTask task2 = new KickstartServiceTask();
         task2.setId("mySecondId");
         task2.setName("My Second Service task");
         task2.setDescription("Desc Second Service task");
@@ -141,9 +151,9 @@ public class KickstartWorkflowDtoTest {
         task2.setClassName("de.test.MySecondClass");
         task2.setExpression("#{my.favorite.second.expression}");
         task2.setStartWithPrevious(true);
-        dto.addTask(task2);
+        kickstartWorkflow.addTask(task2);
         
-        Definitions def = dto.toBpmn20Xml();
+        Definitions def = marshallingService.convertToBpmn(kickstartWorkflow);
         BPMNPlane bpmnPlane = def.getDiagram().get(0).getBPMNPlane();
         List<FlowElement> flowElements = ((Process) bpmnPlane.getBpmnElement()).getFlowElement();
         
@@ -174,28 +184,28 @@ public class KickstartWorkflowDtoTest {
     
     @Test
     public void testParallelServiceAndUserTasks() throws Exception {
-        WorkflowDto dto = new WorkflowDto();
-        dto.setName("One Service Task Workflow");
-        dto.setDescription("Simple workflow definition containing one service task");
+        KickstartWorkflow kickstartWorkflow = new KickstartWorkflow();
+        kickstartWorkflow.setName("One Service Task Workflow");
+        kickstartWorkflow.setDescription("Simple workflow definition containing one service task");
 
-        ServiceTaskDto task1 = new ServiceTaskDto();
+        KickstartServiceTask task1 = new KickstartServiceTask();
         task1.setId("myFirstId");
         task1.setName("My First Service task");
         task1.setDescription("Desc first Service task");
         task1.setDelegateExpression("#{myFirstDelegateExpression}");
         task1.setClassName("de.test.MyFirstClass");
         task1.setExpression("#{my.favorite.first.expression}");
-        dto.addTask(task1);
+        kickstartWorkflow.addTask(task1);
         
-        UserTaskDto task2 = new UserTaskDto();
+        KickstartUserTask task2 = new KickstartUserTask();
         task2.setId("mySecondId");
         task2.setName("My Second Service task");
         task2.setDescription("Desc Second Service task");
         task2.setAssignee("myAssignee");
         task2.setStartWithPrevious(true);
-        dto.addTask(task2);
+        kickstartWorkflow.addTask(task2);
         
-        Definitions def = dto.toBpmn20Xml();
+        Definitions def = marshallingService.convertToBpmn(kickstartWorkflow);
         BPMNPlane bpmnPlane = def.getDiagram().get(0).getBPMNPlane();
         List<FlowElement> flowElements = ((Process) bpmnPlane.getBpmnElement()).getFlowElement();
         

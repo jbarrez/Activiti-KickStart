@@ -12,32 +12,44 @@
  */
 package org.activiti.kickstart.dto;
 
+
 /**
  * @author Joram Barrez
  */
-public class FormPropertyDto {
+public class KickstartUserTask extends KickstartTask {
 
-  protected String property;
-  protected String type;
-  protected Boolean required = new Boolean(false);
+  protected String assignee;
 
-  public String getProperty() {
-    return property;
+  protected String groups;
+
+  protected KickstartForm form;
+
+  public String getAssignee() {
+    return assignee;
   }
-  public void setProperty(String property) {
-    this.property = property;
+
+  public void setAssignee(String assignee) {
+    this.assignee = assignee;
   }
-  public String getType() {
-    return type;
+
+  public String getGroups() {
+    return groups;
   }
-  public void setType(String type) {
-    this.type = type;
+
+  public void setGroups(String groups) {
+    this.groups = groups;
   }
-  public Boolean isRequired() {
-    return required;
+
+  public KickstartForm getForm() {
+    return form;
   }
-  public void setRequired(Boolean required) {
-    this.required = required;
+
+  public void setForm(KickstartForm formDto) {
+    this.form = formDto;
+  }
+
+  public String generateDefaultFormName() {
+    return name.replace(" ", "_") + ".form";
   }
 
 }
