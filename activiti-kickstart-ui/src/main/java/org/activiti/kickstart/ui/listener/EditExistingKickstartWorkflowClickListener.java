@@ -12,11 +12,11 @@
  */
 package org.activiti.kickstart.ui.listener;
 
+import org.activiti.kickstart.KickStartApplication;
 import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ErrorPopupWindow;
-import org.activiti.kickstart.service.KickstartService;
-import org.activiti.kickstart.ui.panel.KickstartWorkflowPanel;
 
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
@@ -24,26 +24,26 @@ import com.vaadin.ui.Button.ClickEvent;
 /**
  * @author Joram Barrez
  */
-public class EditExistingKickstartWorkflowClickListener implements Button.ClickListener {
+public class EditExistingKickstartWorkflowClickListener implements
+		Button.ClickListener {
 
-  protected static final long serialVersionUID = -2160682103119947071L;
+	protected static final long serialVersionUID = -2160682103119947071L;
 
-  protected ViewManager viewManager;
-  protected KickstartService adhocWorkflowService;
+	protected KickstartService adhocWorkflowService;
 
-  public EditExistingKickstartWorkflowClickListener(ViewManager viewManager, KickstartService adhocWorkflowService) {
-    this.viewManager = viewManager;
-    this.adhocWorkflowService = adhocWorkflowService;
-  }
+	public EditExistingKickstartWorkflowClickListener(KickstartService adhocWorkflowService) {
+		this.adhocWorkflowService = adhocWorkflowService;
+	}
 
-  public void buttonClick(ClickEvent event) {
-    try {
-      KickstartWorkflow adhocWorkflow = adhocWorkflowService.findKickstartWorkflowById((String) event.getButton().getData());
-      viewManager.switchWorkArea(ViewManager.EDIT_ADHOC_WORKFLOW, new KickstartWorkflowPanel(viewManager, adhocWorkflow));
-    } catch (Exception e) {
-      e.printStackTrace();
-      viewManager.showPopupWindow(new ErrorPopupWindow(e));
-    }
-  }
+	public void buttonClick(ClickEvent event) {
+		ViewManager viewManager = KickStartApplication.get().getViewManager();
+		try {
+			KickstartWorkflow workflow = adhocWorkflowService.findKickstartWorkflowById((String) event.getButton().getData());
+			viewManager.showEditWorkflowPage(workflow);
+		} catch (Exception e) {
+			e.printStackTrace();
+			viewManager.showPopupWindow(new ErrorPopupWindow(e));
+		}
+	}
 
 }

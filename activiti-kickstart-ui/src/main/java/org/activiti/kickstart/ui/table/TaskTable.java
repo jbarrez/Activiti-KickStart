@@ -19,7 +19,6 @@ import org.activiti.kickstart.dto.KickstartForm;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.model.TaskFormModel;
 import org.activiti.kickstart.model.TaskFormModelListener;
-import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.listener.AddTaskClickListener;
 import org.activiti.kickstart.ui.listener.DeleteTaskClickListener;
 import org.activiti.kickstart.ui.listener.ShowFormClickListener;
@@ -38,11 +37,9 @@ public class TaskTable extends Table implements TaskFormModelListener {
 
   private static final long serialVersionUID = -2578437667358797351L;
 
-  protected ViewManager viewManager;
   protected TaskFormModel taskFormModel = new TaskFormModel();
 
-  public TaskTable(ViewManager viewManager) {
-    this.viewManager = viewManager;
+  public TaskTable() {
     this.taskFormModel.addFormModelListener(this);
 
     setEditable(true);
@@ -134,7 +131,7 @@ public class TaskTable extends Table implements TaskFormModelListener {
 
     KickstartForm form = taskFormModel.getForm(taskItemId);
     Button formButton = new Button(form == null ? "Create form" : "Edit form");
-    formButton.addListener(new ShowFormClickListener(viewManager, taskFormModel, taskItemId));
+    formButton.addListener(new ShowFormClickListener(taskFormModel, taskItemId));
     formButton.setData(taskItemId);
     actionButtons.addComponent(formButton);
 

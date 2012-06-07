@@ -12,9 +12,9 @@
  */
 package org.activiti.kickstart.ui.listener;
 
-import org.activiti.kickstart.ui.ViewManager;
-import org.activiti.kickstart.ui.popup.FormPopupWindow;
+import org.activiti.kickstart.KickStartApplication;
 import org.activiti.kickstart.model.TaskFormModel;
+import org.activiti.kickstart.ui.popup.FormPopupWindow;
 
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
@@ -26,18 +26,16 @@ public class ShowFormClickListener implements Button.ClickListener {
 
   private static final long serialVersionUID = 3881133002111623189L;
 
-  protected ViewManager viewManager;
   protected TaskFormModel formModel;
   protected Object taskItemId;
 
-  public ShowFormClickListener(ViewManager viewManager, TaskFormModel formModel, Object taskItemId) {
-    this.viewManager = viewManager;
+  public ShowFormClickListener(TaskFormModel formModel, Object taskItemId) {
     this.formModel = formModel;
     this.taskItemId = taskItemId;
   }
 
   public void buttonClick(ClickEvent event) {
-    viewManager.showPopupWindow(new FormPopupWindow(taskItemId, formModel));
+    KickStartApplication.get().getViewManager().showPopupWindow(new FormPopupWindow(taskItemId, formModel));
   }
 
 }

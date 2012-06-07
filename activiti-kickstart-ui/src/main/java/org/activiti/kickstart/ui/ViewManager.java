@@ -13,67 +13,59 @@
 package org.activiti.kickstart.ui;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Stack;
 
-import org.activiti.kickstart.KickStartApplication;
+import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.ui.panel.KickstartWorkflowPanel;
+import org.activiti.kickstart.ui.panel.SelectWorkflowPanel;
 
-import com.vaadin.ui.HorizontalSplitPanel;
-import com.vaadin.ui.Panel;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.Window;
 
 /**
  * Based on
- * http://dev.vaadin.com/browser/incubator/gasdiary/src/org/vaadin/gasdiary
- * /ui/ViewManager.java
+ * http://dev.vaadin.com/browser/incubator/gasdiary/src/org/vaadin/gasdiary/ui/ViewManager.java
  * 
  * @author Joram Barrez
  */
 public class ViewManager implements Serializable {
 
-  private static final long serialVersionUID = 4097162454884471228L;
-  
-  public static final String EDIT_ADHOC_WORKFLOW = "editAdhocWorkflow";
-  public static final String PROCESS_SUCESSFULLY_DEPLOYED = "processSuccessfullyDeployed";
-  public static final String SELECT_ADHOC_WORKFLOW = "selectAdhocWorkflow";
+	private static final long serialVersionUID = 4097162454884471228L;
 
-  protected KickStartApplication application;
-  protected HorizontalSplitPanel splitPanel;
-  protected Map<String, Panel> views = new HashMap<String, Panel>();
-  protected Stack<Panel> screenStack = new Stack<Panel>();
+	public static final String EDIT_ADHOC_WORKFLOW = "editAdhocWorkflow";
+	public static final String PROCESS_SUCESSFULLY_DEPLOYED = "processSuccessfullyDeployed";
+	public static final String SELECT_ADHOC_WORKFLOW = "selectAdhocWorkflow";
 
-  public ViewManager(KickStartApplication application, HorizontalSplitPanel splitPanel) {
-    this.application = application;
-    this.splitPanel = splitPanel;
-  }
+	protected MainLayout mainLayout;
 
-  public void switchWorkArea(String viewName, Panel workAreaPanel) {
-    Panel panel = workAreaPanel;
-    if (workAreaPanel != null) {
-      views.put(viewName, workAreaPanel);
-    } else {
-      panel = views.get(viewName);
-    }
-    
-    splitPanel.setSecondComponent(panel);
-  }
+	public ViewManager(MainLayout mainLayout) {
+		this.mainLayout = mainLayout;
+	}
 
-  public void showPopupWindow(Window popupWindow) {
-    application.getMainWindow().addWindow(popupWindow);
-  }
+	public void showCreateWorkflowPage() {
+		mainLayout.setMainContent(new KickstartWorkflowPanel());
+		mainLayout.setMainNavigation(MainMenuBar.MENU_ITEM_CREATE_WORKFLOW);
+	}
 
-  public void pushWorkArea(String viewName, Panel workAreaPanel) {
-    screenStack.push((Panel) splitPanel.getSecondComponent());
-    switchWorkArea(viewName, workAreaPanel);
-  }
+	public void showEditWorkflowPage() {
+		mainLayout.setMainContent(new SelectWorkflowPanel());
+		mainLayout.setMainNavigation(MainMenuBar.MENU_ITEM_EDIT_WORKFLOW);
+	}
+	
+	public void showEditWorkflowPage(KickstartWorkflow kickstartWorkflow) {
+		mainLayout.setMainContent(new KickstartWorkflowPanel(kickstartWorkflow));
+		mainLayout.setMainNavigation(MainMenuBar.MENU_ITEM_SETTINGS);
+	}
 
-  public void popWorkArea() {
-    splitPanel.setSecondComponent(screenStack.pop());
-  }
+	public void showSettingsPage() {
 
-  public KickStartApplication getApplication() {
-    return application;
-  }
+	}
+	
+	public void showComponent(Component component) {
+		mainLayout.setMainContent(component);
+	}
+
+	public void showPopupWindow(Window window) {
+		mainLayout.getWindow().addWindow(window);
+	}
 
 }

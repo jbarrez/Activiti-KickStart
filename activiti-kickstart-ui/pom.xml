@@ -4,7 +4,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <name>Activiti - KickStart - UI</name>
-    <groupId>org.activiti</groupId>
     <artifactId>activiti-kickstart-ui</artifactId>
     <packaging>war</packaging>
 
@@ -24,13 +23,26 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
+                    <source>1.6</source>
+                    <target>1.6</target>
                     <showDeprecation>true</showDeprecation>
                     <showWarnings>true</showWarnings>
                     <optimize>true</optimize>
                 </configuration>
             </plugin>
+            <plugin>
+				<groupId>org.zeroturnaround</groupId>
+				<artifactId>jrebel-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>generate-rebel-xml</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 
             <!-- A simple Jetty test server at http://localhost:8081/activiti-kickstart
                    can be launched with the Maven goal jetty:run and stopped with jetty:stop -->
@@ -51,17 +63,52 @@
                     <scanIntervalSeconds>0</scanIntervalSeconds>
                     <!-- make sure Jetty also finds the widgetset -->
                     <webAppConfig>
-                        <contextPath>/activiti-kickstart</contextPath>
+                        <contextPath>/activiti-kickstart-ui</contextPath>
                         <baseResource implementation="org.mortbay.resource.ResourceCollection">
                             <!-- Workaround for Maven/Jetty issue http://jira.codehaus.org/browse/JETTY-680 -->
                             <!-- <resources>src/main/webapp,${project.build.directory}/${project.build.finalName}</resources> -->
-                            <resourcesAsCSV>src/main/webapp,${project.build.directory}/${project.build.finalName}
-                            </resourcesAsCSV>
+                            <!-- <resourcesAsCSV>src/main/webapp,${project.build.directory}/${project.build.finalName}</resourcesAsCSV> -->
+                            <resourcesAsCSV>src/main/webapp</resourcesAsCSV>
                         </baseResource>
                     </webAppConfig>
                 </configuration>
             </plugin>
         </plugins>
+        <pluginManagement>
+        	<plugins>
+        		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+        		<plugin>
+        			<groupId>org.eclipse.m2e</groupId>
+        			<artifactId>lifecycle-mapping</artifactId>
+        			<version>1.0.0</version>
+        			<configuration>
+        				<lifecycleMappingMetadata>
+        					<pluginExecutions>
+        						<pluginExecution>
+        							<pluginExecutionFilter>
+        								<groupId>
+        									org.zeroturnaround
+        								</groupId>
+        								<artifactId>
+        									jrebel-maven-plugin
+        								</artifactId>
+        								<versionRange>
+        									[1.0.7,)
+        								</versionRange>
+        								<goals>
+        									<goal>generate</goal>
+        								</goals>
+        							</pluginExecutionFilter>
+        							<action>
+        								<ignore></ignore>
+        							</action>
+        						</pluginExecution>
+        					</pluginExecutions>
+        				</lifecycleMappingMetadata>
+        			</configuration>
+        		</plugin>
+        	</plugins>
+        </pluginManagement>
     </build>
 
     <dependencies>

@@ -12,85 +12,70 @@
  */
 package org.activiti.kickstart;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.activiti.kickstart.ui.MainLayout;
 import org.activiti.kickstart.ui.ViewManager;
-import org.activiti.kickstart.ui.panel.ActionsPanel;
-import org.activiti.kickstart.ui.panel.KickstartWorkflowPanel;
 
 import com.vaadin.Application;
-import com.vaadin.ui.CustomLayout;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.HorizontalSplitPanel;
-import com.vaadin.ui.Panel;
+import com.vaadin.terminal.gwt.server.HttpServletRequestListener;
 import com.vaadin.ui.Window;
-import com.vaadin.ui.themes.Reindeer;
 
 /**
  * @author Joram Barrez
  */
-public class KickStartApplication extends Application {
+public class KickStartApplication extends Application implements HttpServletRequestListener {
 
-  protected static final long serialVersionUID = 6197397757268207621L;
+	protected static final long serialVersionUID = 6197397757268207621L;
 
-  protected static final String TITLE = "Activiti KickStart";
-  protected static final String THEME_NAME = "yakalo";
-  protected static final String CONTENT_LOCATION = "content"; // id of div in layout where app needs to come
+	protected static final String TITLE = "Activiti KickStart";
+	protected static final String THEME_NAME = "activiti";
 
-  // ui
-  protected ViewManager viewManager;
-  protected CustomLayout mainLayout; // general layout of the app
-  protected HorizontalSplitPanel splitPanel; // app uses a split panel: left actions, right work area
-  protected ActionsPanel actionsPanel; // left panel with user actions
-  protected Panel currentWorkArea; // right panel of ui where actual work happens
+	// Thread local storage of instance for each user
+	protected static ThreadLocal<KickStartApplication> current = new ThreadLocal<KickStartApplication>();
 
-  public void init() {
-    setTheme(THEME_NAME);
-    initMainWindow();
-    initDefaultWorkArea();
-  }
+	// ui
+	protected ViewManager viewManager;
+	protected MainLayout mainLayout; // general layout of the app
 
-  protected void initMainWindow() {
+	public void init() {
+		initMainWindow();
+	}
 
-    Window mainWindow = new Window(TITLE);
-    setMainWindow(mainWindow);
-    Panel p = new Panel();
-    p.setSizeFull();
-    mainWindow.setContent(p);
-    
-    mainLayout = new CustomLayout(THEME_NAME); // uses layout defined in webapp/Vaadin/themes/yakalo
-    mainLayout.setSizeFull();
-    p.setContent(mainLayout);
+	public static KickStartApplication get() {
+		return current.get();
+	}
 
-    initSplitPanel();
-    initViewManager();
-    initActionsPanel();
-  }
+	protected void initMainWindow() {
+		Window mainWindow = new Window(TITLE);
+		mainWindow.setTheme(THEME_NAME);
+		setMainWindow(mainWindow);
 
-  protected void initSplitPanel() {
-    splitPanel = new HorizontalSplitPanel(); 
-    splitPanel.setSplitPosition(170, HorizontalSplitPanel.UNITS_PIXELS);
-    splitPanel.setStyleName(Reindeer.LAYOUT_WHITE);
-    splitPanel.setSizeFull();
-    
-    mainLayout.addComponent(splitPanel, CONTENT_LOCATION);
-  }
+		this.mainLayout = new MainLayout();
+		mainWindow.setContent(mainLayout);
 
-  protected void initActionsPanel() {
-    this.actionsPanel = new ActionsPanel(viewManager);
-    splitPanel.setFirstComponent(actionsPanel);
-  }
+		this.viewManager = new ViewManager(mainLayout);
+	}
 
-  protected void initViewManager() {
-    this.viewManager = new ViewManager(this, splitPanel);
-  }
+	// GETTERS
+	// /////////////////////////////////////////////////////////////////////////
 
-  protected void initDefaultWorkArea() {
-    viewManager.switchWorkArea(ViewManager.EDIT_ADHOC_WORKFLOW, new KickstartWorkflowPanel(viewManager));
-  }
+	public ViewManager getViewManager() {
+		return viewManager;
+	}
 
-  // GETTERS /////////////////////////////////////////////////////////////////////////
+	// HttpServletRequestListener
+	// ///////////////////////////////////////////////////////
 
-  public ViewManager getViewManager() {
-    return viewManager;
-  }
+	public void onRequestStart(HttpServletRequest request, HttpServletResponse response) {
+		// Set current application object as thread-local to make it easy accessible
+		current.set(this);
+	}
+
+	public void onRequestEnd(HttpServletRequest request, HttpServletResponse response) {
+		// Clean up thread-local app
+		current.remove();
+	}
 
 }

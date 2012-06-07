@@ -12,15 +12,16 @@
  */
 package org.activiti.kickstart.ui.panel;
 
+import org.activiti.kickstart.KickStartApplication;
 import org.activiti.kickstart.dto.KickstartTask;
-import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartUserTask;
+import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.service.KickstartService;
+import org.activiti.kickstart.service.ServiceLocator;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ErrorPopupWindow;
 import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 import org.activiti.kickstart.ui.table.TaskTable;
-import org.activiti.kickstart.service.KickstartService;
-import org.activiti.kickstart.service.ServiceLocator;
 
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
@@ -41,182 +42,181 @@ import com.vaadin.ui.themes.Reindeer;
  */
 public class KickstartWorkflowPanel extends Panel {
 
-  protected static final long serialVersionUID = -2074647293591779784L;
+	protected static final long serialVersionUID = -2074647293591779784L;
 
-  protected static final String NEW_ADHOC_WORKFLOW_TITLE = "Create new adhoc workflow";
-  protected static final String EXISTING_ADHOC_WORKFLOW_TITLE = "Edit workflow";
-  protected static final String NAME_FIELD = "Name";
-  protected static final String DESCRIPTION_FIELD = "Description";
+	protected static final String NEW_WORKFLOW_TITLE = "Create new adhoc workflow";
+	protected static final String EXISTING_WORKFLOW_TITLE = "Edit workflow";
+	protected static final String NAME_FIELD = "Name";
+	protected static final String DESCRIPTION_FIELD = "Description";
 
-  // ui
-  protected Label titleLabel;
-  protected TextField nameField;
-  protected TextField descriptionField;
-  protected TaskTable taskTable;
-  protected Resource saveImage;
-  protected Resource generateImageImage;
+	// ui
+	protected Label titleLabel;
+	protected TextField nameField;
+	protected TextField descriptionField;
+	protected TaskTable taskTable;
+	protected Resource saveImage;
+	protected Resource generateImageImage;
 
-  // dependencies
-  protected ViewManager viewManager;
-  protected KickstartService kickStartService;
-  protected KickstartWorkflow existingAdhocWorkflow;
+	// dependencies
+	protected KickstartService kickStartService;
+	protected KickstartWorkflow existingWorkflow;
 
-  public KickstartWorkflowPanel(ViewManager viewManager, KickstartWorkflow existingAdhocWorkflow) {
-    this.viewManager = viewManager;
-    this.existingAdhocWorkflow = existingAdhocWorkflow;
-    this.saveImage = new ClassResource("images/page_save.png", viewManager.getApplication());
-    this.generateImageImage = new ClassResource("images/image.png", viewManager.getApplication());
-    init();
-  }
+	public KickstartWorkflowPanel(KickstartWorkflow existingWorkflow) {
+		this.existingWorkflow = existingWorkflow;
+		this.saveImage = new ClassResource("images/page_save.png", KickStartApplication.get());
+		this.generateImageImage = new ClassResource("images/image.png", KickStartApplication.get());
+		init();
+	}
 
-  public KickstartWorkflowPanel(ViewManager viewManager) {
-    this(viewManager, null);
-  }
+	public KickstartWorkflowPanel() {
+		this(null);
+	}
 
-  protected void init() {
-    setSizeFull();
-    setStyleName(Reindeer.PANEL_LIGHT);
-    this.kickStartService = ServiceLocator.getDefaultKickStartService();
-    initUi();
-  }
+	protected void init() {
+		setSizeFull();
+		setStyleName(Reindeer.PANEL_LIGHT);
+		this.kickStartService = ServiceLocator.getDefaultKickStartService();
+		initUi();
+	}
 
-  protected void initUi() {
-    initTitle();
+	protected void initUi() {
+		initTitle();
 
-    GridLayout layout = new GridLayout(2, 7);
-    layout.setSizeFull();
-    layout.setColumnExpandRatio(0, 1.0f);
-    layout.setColumnExpandRatio(1, 9.0f);
-    layout.setSpacing(true);
-    addComponent(layout);
+		GridLayout layout = new GridLayout(2, 7);
+		layout.setSizeFull();
+		layout.setColumnExpandRatio(0, 1.0f);
+		layout.setColumnExpandRatio(1, 9.0f);
+		layout.setSpacing(true);
+		addComponent(layout);
 
-    initNameField(layout);
-    initDescriptionField(layout);
-    initTaskTable(layout);
-    initButtons(layout);
-  }
+		initNameField(layout);
+		initDescriptionField(layout);
+		initTaskTable(layout);
+		initButtons(layout);
+	}
 
-  protected void initTitle() {
-    VerticalLayout verticalLayout = new VerticalLayout();
-    if (existingAdhocWorkflow == null) {
-      titleLabel = new Label(NEW_ADHOC_WORKFLOW_TITLE);
-    } else {
-      titleLabel = new Label(EXISTING_ADHOC_WORKFLOW_TITLE + " '" + existingAdhocWorkflow.getName() + "'");
-    }
-    titleLabel.setStyleName(Reindeer.LABEL_H1);
-    verticalLayout.addComponent(titleLabel);
+	protected void initTitle() {
+		VerticalLayout verticalLayout = new VerticalLayout();
+		if (existingWorkflow == null) {
+			titleLabel = new Label(NEW_WORKFLOW_TITLE);
+		} else {
+			titleLabel = new Label(EXISTING_WORKFLOW_TITLE + " '" + existingWorkflow.getName() + "'");
+		}
+		titleLabel.setStyleName(Reindeer.LABEL_H1);
+		verticalLayout.addComponent(titleLabel);
 
-    // add some empty space
-    Label emptyLabel = new Label("");
-    emptyLabel.setHeight("1.5em");
-    verticalLayout.addComponent(emptyLabel);
+		// add some empty space
+		Label emptyLabel = new Label("");
+		emptyLabel.setHeight("1.5em");
+		verticalLayout.addComponent(emptyLabel);
 
-    addComponent(verticalLayout);
-  }
+		addComponent(verticalLayout);
+	}
 
-  protected void initNameField(GridLayout layout) {
-    nameField = new TextField();
-    nameField.setWriteThrough(true);
-    nameField.setImmediate(true);
-    if (existingAdhocWorkflow != null) {
-      nameField.setValue(existingAdhocWorkflow.getName());
-    }
-    
-    layout.addComponent(new Label(NAME_FIELD));
-    layout.addComponent(nameField);
-  }
+	protected void initNameField(GridLayout layout) {
+		nameField = new TextField();
+		nameField.setWriteThrough(true);
+		nameField.setImmediate(true);
+		if (existingWorkflow != null) {
+			nameField.setValue(existingWorkflow.getName());
+		}
 
-  protected void initDescriptionField(GridLayout layout) {
-    descriptionField = new TextField();
-    descriptionField.setRows(4);
-    descriptionField.setColumns(35);
-    if (existingAdhocWorkflow != null) {
-      descriptionField.setValue(existingAdhocWorkflow.getDescription());
-    }
-    layout.addComponent(new Label(DESCRIPTION_FIELD));
-    layout.addComponent(descriptionField);
-  }
+		layout.addComponent(new Label(NAME_FIELD));
+		layout.addComponent(nameField);
+	}
 
-  protected void initTaskTable(GridLayout layout) {
-    taskTable = new TaskTable(viewManager);
-    if (existingAdhocWorkflow == null) {
-      taskTable.addDefaultTaskRow();
-    } else {
-      for (KickstartTask task : existingAdhocWorkflow.getTasks()) {
-        if(task instanceof KickstartUserTask) {
-          taskTable.addTaskRow((KickstartUserTask) task);
-        }
-      }
-    }
+	protected void initDescriptionField(GridLayout layout) {
+		descriptionField = new TextField();
+		descriptionField.setRows(4);
+		descriptionField.setColumns(35);
+		if (existingWorkflow != null) {
+			descriptionField.setValue(existingWorkflow.getDescription());
+		}
+		layout.addComponent(new Label(DESCRIPTION_FIELD));
+		layout.addComponent(descriptionField);
+	}
 
-    layout.addComponent(new Label("Tasks"));
-    layout.addComponent(taskTable);
-  }
+	protected void initTaskTable(GridLayout layout) {
+		taskTable = new TaskTable();
+		if (existingWorkflow == null) {
+			taskTable.addDefaultTaskRow();
+		} else {
+			for (KickstartTask task : existingWorkflow.getTasks()) {
+				if (task instanceof KickstartUserTask) {
+					taskTable.addTaskRow((KickstartUserTask) task);
+				}
+			}
+		}
 
-  protected void initButtons(GridLayout layout) {
-    final Button saveButton = new Button("Save");
-    saveButton.setEnabled(nameField.getValue() != null && !"".equals((String) nameField.getValue()));
-    saveButton.setIcon(saveImage);
-    saveButton.addListener(new Button.ClickListener() {
+		layout.addComponent(new Label("Tasks"));
+		layout.addComponent(taskTable);
+	}
 
-      private static final long serialVersionUID = 1L;
+	protected void initButtons(GridLayout layout) {
+		final Button saveButton = new Button("Save");
+		saveButton.setEnabled(nameField.getValue() != null && !"".equals((String) nameField.getValue()));
+		saveButton.setIcon(saveImage);
+		saveButton.addListener(new Button.ClickListener() {
 
-      public void buttonClick(ClickEvent event) {
-        try {
-          kickStartService.deployKickstartWorkflow(createAdhocWorkflow());
-          Panel successPanel = new Panel();
-          successPanel.setStyleName(Reindeer.PANEL_LIGHT);
-          Label successLabel = new Label("Process successfully deployed");
-          successPanel.addComponent(successLabel);
-          viewManager.switchWorkArea(ViewManager.PROCESS_SUCESSFULLY_DEPLOYED, successPanel);
-        } catch (Exception e) {
-          e.printStackTrace();
-          viewManager.showPopupWindow(new ErrorPopupWindow(e));
-        }
-      }
-    });
-    
-    // Dependending on namefield value, save button is enabled
-    nameField.addListener(new ValueChangeListener() {
-        private static final long serialVersionUID = 1L;
-        public void valueChange(ValueChangeEvent event) {
-          if (nameField.getValue() != null 
-                  && !"".equals((String) nameField.getValue())) {
-            saveButton.setEnabled(true);
-          } else {
-            saveButton.setEnabled(false);
-          }
-        }
-      });
+			private static final long serialVersionUID = 1L;
 
-    Button generateImageButton = new Button("View image");
-    generateImageButton.setIcon(generateImageImage);
-    generateImageButton.addListener(new Button.ClickListener() {
+			public void buttonClick(ClickEvent event) {
+				try {
+					kickStartService.deployKickstartWorkflow(createWorkflow());
+					Panel successPanel = new Panel();
+					successPanel.setStyleName(Reindeer.PANEL_LIGHT);
+					Label successLabel = new Label("Process successfully deployed");
+					successPanel.addComponent(successLabel);
+					KickStartApplication.get().getViewManager().showComponent(successPanel);
+				} catch (Exception e) {
+					e.printStackTrace();
+					KickStartApplication.get().getViewManager().showPopupWindow(new ErrorPopupWindow(e));
+				}
+			}
+		});
 
-      private static final long serialVersionUID = 5671158538486627690L;
+		// Dependending on namefield value, save button is enabled
+		nameField.addListener(new ValueChangeListener() {
+			private static final long serialVersionUID = 1L;
 
-      public void buttonClick(ClickEvent event) {
-        viewManager.showPopupWindow(new ProcessImagePopupWindow(viewManager, createAdhocWorkflow()));
-      }
+			public void valueChange(ValueChangeEvent event) {
+				if (nameField.getValue() != null && !"".equals((String) nameField.getValue())) {
+					saveButton.setEnabled(true);
+				} else {
+					saveButton.setEnabled(false);
+				}
+			}
+		});
 
-    });
+		Button generateImageButton = new Button("View image");
+		generateImageButton.setIcon(generateImageImage);
+		generateImageButton.addListener(new Button.ClickListener() {
 
-    HorizontalLayout footer = new HorizontalLayout();
-    footer.setSpacing(true);
-    footer.addComponent(saveButton);
-    footer.addComponent(generateImageButton);
-    layout.addComponent(new Label());
-    layout.addComponent(footer);
-  }
+			private static final long serialVersionUID = 5671158538486627690L;
 
-  protected KickstartWorkflow createAdhocWorkflow() {
-    KickstartWorkflow adhocWorkflow = new KickstartWorkflow();
-    adhocWorkflow.setName((String) nameField.getValue());
-    adhocWorkflow.setDescription((String) descriptionField.getValue());
-    for (KickstartUserTask task : taskTable.getTasks()) {
-      adhocWorkflow.addTask(task);
-    }
-    return adhocWorkflow;
-  }
+			public void buttonClick(ClickEvent event) {
+				ViewManager viewManager = KickStartApplication.get().getViewManager();
+				viewManager.showPopupWindow(new ProcessImagePopupWindow(createWorkflow()));
+			}
+
+		});
+
+		HorizontalLayout footer = new HorizontalLayout();
+		footer.setSpacing(true);
+		footer.addComponent(saveButton);
+		footer.addComponent(generateImageButton);
+		layout.addComponent(new Label());
+		layout.addComponent(footer);
+	}
+
+	protected KickstartWorkflow createWorkflow() {
+		KickstartWorkflow workflow = new KickstartWorkflow();
+		workflow.setName((String) nameField.getValue());
+		workflow.setDescription((String) descriptionField.getValue());
+		for (KickstartUserTask task : taskTable.getTasks()) {
+			workflow.addTask(task);
+		}
+		return workflow;
+	}
 
 }

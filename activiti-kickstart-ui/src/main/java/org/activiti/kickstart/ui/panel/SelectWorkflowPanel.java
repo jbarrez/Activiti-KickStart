@@ -16,12 +16,12 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
+import org.activiti.kickstart.KickStartApplication;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
-import org.activiti.kickstart.ui.ViewManager;
-import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.ServiceLocator;
 import org.activiti.kickstart.ui.listener.EditExistingKickstartWorkflowClickListener;
+import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 
 import com.vaadin.data.Item;
 import com.vaadin.terminal.StreamResource;
@@ -39,7 +39,7 @@ import com.vaadin.ui.themes.Reindeer;
 /**
  * @author Joram Barrez
  */
-public class SelectAdhocWorkflowPanel extends Panel {
+public class SelectWorkflowPanel extends Panel {
 
   protected static final long serialVersionUID = 3103964043105524411L;
 
@@ -51,12 +51,10 @@ public class SelectAdhocWorkflowPanel extends Panel {
 //  protected Resource xmlImage;
 
   protected VerticalLayout layout;
-  protected ViewManager viewManager;
-  protected KickstartService adhocWorkflowService;
+  protected KickstartService kickstartService;
 
-  public SelectAdhocWorkflowPanel(ViewManager viewManager) {
-    this.viewManager = viewManager;
-    this.adhocWorkflowService = ServiceLocator.getDefaultKickStartService();
+  public SelectWorkflowPanel() {
+    this.kickstartService = ServiceLocator.getDefaultKickStartService();
 //    this.editImage = new ClassResource("images/edit.png", viewManager.getApplication());
 //    this.xmlImage = new ClassResource("images/xml.png", viewManager.getApplication());
 
@@ -115,7 +113,7 @@ public class SelectAdhocWorkflowPanel extends Panel {
   }
 
   protected void initWorkflowTableContents() {
-    List<KickstartWorkflowInfo> processDefinitions = adhocWorkflowService.findKickstartWorkflowInformation();
+    List<KickstartWorkflowInfo> processDefinitions = kickstartService.findKickstartWorkflowInformation();
     for (final KickstartWorkflowInfo infoDto : processDefinitions) {
       Item workflowItem = workflowTable.getItem(workflowTable.addItem());
       Button nameButton = new Button(infoDto.getName());
@@ -125,7 +123,7 @@ public class SelectAdhocWorkflowPanel extends Panel {
         private static final long serialVersionUID = 5671158538486627690L;
 
         public void buttonClick(ClickEvent event) {
-          viewManager.showPopupWindow(new ProcessImagePopupWindow(viewManager, infoDto.getId()));
+          KickStartApplication.get().getViewManager().showPopupWindow(new ProcessImagePopupWindow(infoDto.getId()));
         }
 
       });
@@ -143,7 +141,7 @@ public class SelectAdhocWorkflowPanel extends Panel {
       editButton.setStyleName("link");
 //      editButton.setIcon(editImage);
       editButton.setData(infoDto.getId());
-      editButton.addListener(new EditExistingKickstartWorkflowClickListener(viewManager, adhocWorkflowService));
+      editButton.addListener(new EditExistingKickstartWorkflowClickListener(kickstartService));
       actions.addComponent(editButton);
 
       StreamResource.StreamSource streamSource = new StreamSource() {
@@ -154,7 +152,7 @@ public class SelectAdhocWorkflowPanel extends Panel {
           return ServiceLocator.getDefaultKickStartService().getProcessBpmnXml(infoDto.getId());
         }
       };
-      Link bpmnXmlLink = new Link("get xml", new StreamResource(streamSource, infoDto.getKey() + ".bpmn20.xml", viewManager.getApplication()));
+      Link bpmnXmlLink = new Link("get xml", new StreamResource(streamSource, infoDto.getKey() + ".bpmn20.xml", KickStartApplication.get()));
 //      bpmnXmlLink.setIcon(xmlImage);
       actions.addComponent(bpmnXmlLink);
 

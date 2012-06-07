@@ -15,6 +15,7 @@ package org.activiti.kickstart.ui.popup;
 import java.io.InputStream;
 import java.util.UUID;
 
+import org.activiti.kickstart.KickStartApplication;
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.service.KickstartService;
@@ -34,70 +35,70 @@ import com.vaadin.ui.themes.Reindeer;
  */
 public class ProcessImagePopupWindow extends Window {
 
-  private static final long serialVersionUID = -1483000500366042513L;
+	private static final long serialVersionUID = -1483000500366042513L;
 
-  protected static final String TITLE = "Process image";
+	protected static final String TITLE = "Process image";
 
-  protected ViewManager viewManager;
-  protected KickstartWorkflow kickstartWorkflow;
-  protected String processDefinitionId;
-  protected KickstartService kickstartService;
+	protected ViewManager viewManager;
+	protected KickstartWorkflow kickstartWorkflow;
+	protected String processDefinitionId;
+	protected KickstartService kickstartService;
 
-  public ProcessImagePopupWindow(ViewManager viewManager, String processDefinitionId) {
-    this.processDefinitionId = processDefinitionId;
-    init(viewManager);
-  }
+	public ProcessImagePopupWindow(String processDefinitionId) {
+		this.processDefinitionId = processDefinitionId;
+		init();
+	}
 
-  public ProcessImagePopupWindow(ViewManager viewManager, KickstartWorkflow adhocWorkflow) {
-    this.kickstartWorkflow = adhocWorkflow;
-    init(viewManager);
-  }
+	public ProcessImagePopupWindow(KickstartWorkflow adhocWorkflow) {
+		this.kickstartWorkflow = adhocWorkflow;
+		init();
+	}
 
-  public void init(ViewManager viewManager) {
-    this.viewManager = viewManager;
-    this.kickstartService = ServiceLocator.getDefaultKickStartService();
-    initUi();
-  }
+	public void init() {
+		this.viewManager = KickStartApplication.get().getViewManager();
+		this.kickstartService = ServiceLocator.getDefaultKickStartService();
+		initUi();
+	}
 
-  protected void initUi() {
-    setModal(true);
-    setHeight("80%");
-    setWidth("80%");
-    center();
-    setCaption(TITLE);
+	protected void initUi() {
+		setModal(true);
+		setHeight("80%");
+		setWidth("80%");
+		center();
+		setCaption(TITLE);
 
-    StreamResource.StreamSource streamSource = null;
-    if (processDefinitionId != null) {
-      streamSource = new StreamSource() {
+		StreamResource.StreamSource streamSource = null;
+		if (processDefinitionId != null) {
+			streamSource = new StreamSource() {
 
-        private static final long serialVersionUID = -8875067466181823014L;
+				private static final long serialVersionUID = -8875067466181823014L;
 
-        public InputStream getStream() {
-          return kickstartService.getProcessImage(processDefinitionId);
-        }
-      };
-    } else if (kickstartWorkflow != null) {
-      final ProcessDiagramGenerator converter = new ProcessDiagramGenerator(kickstartWorkflow, ServiceLocator.getMarshallingService());
-      streamSource = new StreamSource() {
+				public InputStream getStream() {
+					return kickstartService.getProcessImage(processDefinitionId);
+				}
+			};
+		} else if (kickstartWorkflow != null) {
+			final ProcessDiagramGenerator converter = new ProcessDiagramGenerator(kickstartWorkflow, ServiceLocator.getMarshallingService());
+			streamSource = new StreamSource() {
 
-        private static final long serialVersionUID = 239500411112658830L;
+				private static final long serialVersionUID = 239500411112658830L;
 
-        public InputStream getStream() {
-          return converter.execute();
-        }
-      };
-    }
+				public InputStream getStream() {
+					return converter.execute();
+				}
+			};
+		}
 
-    // resource must have unique id!
-    StreamResource imageresource = new StreamResource(streamSource, UUID.randomUUID() + ".png", viewManager.getApplication());
-    Panel panel = new Panel();
-    panel.setContent(new HorizontalLayout());
-    panel.setStyleName(Reindeer.PANEL_LIGHT);
-    panel.setHeight("95%");
-    Embedded embedded = new Embedded("", imageresource);
-    embedded.setType(Embedded.TYPE_IMAGE);
-    panel.addComponent(embedded);
-    addComponent(panel);
-  }
+		// resource must have unique id (or cache-crap can happen)!
+		StreamResource imageresource = new StreamResource(streamSource,UUID.randomUUID() + ".png", KickStartApplication.get());
+		Panel panel = new Panel();
+		panel.setContent(new HorizontalLayout());
+		panel.setStyleName(Reindeer.PANEL_LIGHT);
+		panel.setHeight("95%");
+		Embedded embedded = new Embedded("", imageresource);
+		embedded.setType(Embedded.TYPE_IMAGE);
+		panel.addComponent(embedded);
+		addComponent(panel);
+	}
 
 }
