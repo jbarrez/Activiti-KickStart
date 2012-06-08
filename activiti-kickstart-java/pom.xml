@@ -56,6 +56,13 @@
 			<artifactId>h2</artifactId>
 			<version>1.2.132</version>
 		</dependency>
+		<!-- CMIS -->
+		<dependency>
+    		<groupId>org.apache.chemistry.opencmis</groupId>
+    		<artifactId>chemistry-opencmis-client-impl</artifactId>
+    		<version>0.7.0</version>
+ 		</dependency>
+		<!-- Testing -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
