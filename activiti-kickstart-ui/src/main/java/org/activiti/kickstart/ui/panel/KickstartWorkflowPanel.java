@@ -12,7 +12,7 @@
  */
 package org.activiti.kickstart.ui.panel;
 
-import org.activiti.kickstart.KickStartApplication;
+import org.activiti.kickstart.KickstartApplication;
 import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
@@ -63,8 +63,8 @@ public class KickstartWorkflowPanel extends Panel {
 
 	public KickstartWorkflowPanel(KickstartWorkflow existingWorkflow) {
 		this.existingWorkflow = existingWorkflow;
-		this.saveImage = new ClassResource("images/page_save.png", KickStartApplication.get());
-		this.generateImageImage = new ClassResource("images/image.png", KickStartApplication.get());
+		this.saveImage = new ClassResource("images/page_save.png", KickstartApplication.get());
+		this.generateImageImage = new ClassResource("images/image.png", KickstartApplication.get());
 		init();
 	}
 
@@ -75,7 +75,7 @@ public class KickstartWorkflowPanel extends Panel {
 	protected void init() {
 		setSizeFull();
 		setStyleName(Reindeer.PANEL_LIGHT);
-		this.kickStartService = ServiceLocator.getDefaultKickStartService();
+		this.kickStartService = KickstartApplication.get().getKickstartService();
 		initUi();
 	}
 
@@ -167,10 +167,10 @@ public class KickstartWorkflowPanel extends Panel {
 					successPanel.setStyleName(Reindeer.PANEL_LIGHT);
 					Label successLabel = new Label("Process successfully deployed");
 					successPanel.addComponent(successLabel);
-					KickStartApplication.get().getViewManager().showComponent(successPanel);
+					KickstartApplication.get().getViewManager().showComponent(successPanel);
 				} catch (Exception e) {
 					e.printStackTrace();
-					KickStartApplication.get().getViewManager().showPopupWindow(new ErrorPopupWindow(e));
+					KickstartApplication.get().getViewManager().showPopupWindow(new ErrorPopupWindow(e));
 				}
 			}
 		});
@@ -195,7 +195,7 @@ public class KickstartWorkflowPanel extends Panel {
 			private static final long serialVersionUID = 5671158538486627690L;
 
 			public void buttonClick(ClickEvent event) {
-				ViewManager viewManager = KickStartApplication.get().getViewManager();
+				ViewManager viewManager = KickstartApplication.get().getViewManager();
 				viewManager.showPopupWindow(new ProcessImagePopupWindow(createWorkflow()));
 			}
 

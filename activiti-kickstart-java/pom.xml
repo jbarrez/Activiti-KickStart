@@ -4,7 +4,6 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<name>Activiti - KickStart - Java</name>
-	<groupId>org.activiti</groupId>
 	<artifactId>activiti-kickstart-java</artifactId>
 	<packaging>jar</packaging>
 
@@ -39,7 +38,7 @@
 		<dependency>
 			<groupId>org.activiti</groupId>
 			<artifactId>activiti-engine</artifactId>
-			<version>5.9</version>
+			<version>${activiti.version}</version>
 		</dependency>
 		<!-- JAXB dependencies -->
 		<dependency>
@@ -64,13 +63,5 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
-   <repositories>
-    <repository>
-      <id>alfresco</id>
-      <name>Alfresco</name>
-      <url>http://maven.alfresco.com/nexus/content/groups/public</url>
-    </repository>
-  </repositories>
 
 </project>

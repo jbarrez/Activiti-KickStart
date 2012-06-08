@@ -12,7 +12,7 @@
  */
 package org.activiti.kickstart.ui.listener;
 
-import org.activiti.kickstart.KickStartApplication;
+import org.activiti.kickstart.KickstartApplication;
 import org.activiti.kickstart.model.TaskFormModel;
 import org.activiti.kickstart.ui.popup.FormPopupWindow;
 
@@ -35,7 +35,7 @@ public class ShowFormClickListener implements Button.ClickListener {
   }
 
   public void buttonClick(ClickEvent event) {
-    KickStartApplication.get().getViewManager().showPopupWindow(new FormPopupWindow(taskItemId, formModel));
+    KickstartApplication.get().getViewManager().showPopupWindow(new FormPopupWindow(taskItemId, formModel));
   }
 
 }

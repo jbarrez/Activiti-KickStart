@@ -12,7 +12,7 @@
  */
 package org.activiti.kickstart.ui.listener;
 
-import org.activiti.kickstart.KickStartApplication;
+import org.activiti.kickstart.KickstartApplication;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.ui.ViewManager;
@@ -36,7 +36,7 @@ public class EditExistingKickstartWorkflowClickListener implements
 	}
 
 	public void buttonClick(ClickEvent event) {
-		ViewManager viewManager = KickStartApplication.get().getViewManager();
+		ViewManager viewManager = KickstartApplication.get().getViewManager();
 		try {
 			KickstartWorkflow workflow = adhocWorkflowService.findKickstartWorkflowById((String) event.getButton().getData());
 			viewManager.showEditWorkflowPage(workflow);

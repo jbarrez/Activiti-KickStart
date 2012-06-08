@@ -11,6 +11,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<activiti.version>5.9</activiti.version>
 	</properties>
 	
     <modules>
@@ -35,5 +36,13 @@
 
 		</plugins>
 	</build>
+	
+	<repositories>
+	<repository>
+		<id>alfresco</id>
+		<name>Alfresco</name>
+		<url>http://maven.alfresco.com/nexus/content/groups/public</url>
+	</repository>
+</repositories>
 	
 </project>

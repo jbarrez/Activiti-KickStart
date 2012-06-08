@@ -15,7 +15,7 @@ package org.activiti.kickstart.ui.popup;
 import java.io.InputStream;
 import java.util.UUID;
 
-import org.activiti.kickstart.KickStartApplication;
+import org.activiti.kickstart.KickstartApplication;
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.service.KickstartService;
@@ -55,8 +55,8 @@ public class ProcessImagePopupWindow extends Window {
 	}
 
 	public void init() {
-		this.viewManager = KickStartApplication.get().getViewManager();
-		this.kickstartService = ServiceLocator.getDefaultKickStartService();
+		this.viewManager = KickstartApplication.get().getViewManager();
+		this.kickstartService = KickstartApplication.get().getKickstartService();
 		initUi();
 	}
 
@@ -90,7 +90,7 @@ public class ProcessImagePopupWindow extends Window {
 		}
 
 		// resource must have unique id (or cache-crap can happen)!
-		StreamResource imageresource = new StreamResource(streamSource,UUID.randomUUID() + ".png", KickStartApplication.get());
+		StreamResource imageresource = new StreamResource(streamSource,UUID.randomUUID() + ".png", KickstartApplication.get());
 		Panel panel = new Panel();
 		panel.setContent(new HorizontalLayout());
 		panel.setStyleName(Reindeer.PANEL_LIGHT);

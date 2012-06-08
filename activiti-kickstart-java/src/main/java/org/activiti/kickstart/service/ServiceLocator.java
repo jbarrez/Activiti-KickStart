@@ -17,9 +17,7 @@ import org.activiti.engine.ProcessEngines;
 
 /**
  * 
- * Yes, i know Service Locator is considered a 'bad design' nowadays. But given
- * the limited services we currently need, it's thrown away time to introduce DI
- * for it...
+ * Service locator, for those who do not like using the Spring context way.
  * 
  * @author Joram Barrez
  */

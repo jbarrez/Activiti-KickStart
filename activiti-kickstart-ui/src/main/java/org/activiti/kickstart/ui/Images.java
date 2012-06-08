@@ -26,6 +26,6 @@ public class Images {
   
   public static final Resource MAIN_MENU_CREATE_WORKFLOW = new ThemeResource("img/mm-tasks.png");
   public static final Resource MAIN_MENU_EDIT_WORKFLOW = new ThemeResource("img/mm-process.png");
-  public static final Resource MAIN_MENU_SETTINGS = new ThemeResource("img/mm-manage.png");
+  public static final Resource MAIN_MENU_SETTINGS = new ThemeResource("img/mm-settings.png");
   
 }

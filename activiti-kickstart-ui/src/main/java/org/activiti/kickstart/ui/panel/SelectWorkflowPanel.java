@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
-import org.activiti.kickstart.KickStartApplication;
+import org.activiti.kickstart.KickstartApplication;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.ServiceLocator;
@@ -54,7 +54,7 @@ public class SelectWorkflowPanel extends Panel {
   protected KickstartService kickstartService;
 
   public SelectWorkflowPanel() {
-    this.kickstartService = ServiceLocator.getDefaultKickStartService();
+    this.kickstartService = KickstartApplication.get().getKickstartService();
 //    this.editImage = new ClassResource("images/edit.png", viewManager.getApplication());
 //    this.xmlImage = new ClassResource("images/xml.png", viewManager.getApplication());
 
@@ -123,7 +123,7 @@ public class SelectWorkflowPanel extends Panel {
         private static final long serialVersionUID = 5671158538486627690L;
 
         public void buttonClick(ClickEvent event) {
-          KickStartApplication.get().getViewManager().showPopupWindow(new ProcessImagePopupWindow(infoDto.getId()));
+          KickstartApplication.get().getViewManager().showPopupWindow(new ProcessImagePopupWindow(infoDto.getId()));
         }
 
       });
@@ -149,10 +149,10 @@ public class SelectWorkflowPanel extends Panel {
         private static final long serialVersionUID = -8875067466181823014L;
 
         public InputStream getStream() {
-          return ServiceLocator.getDefaultKickStartService().getProcessBpmnXml(infoDto.getId());
+          return KickstartApplication.get().getKickstartService().getProcessBpmnXml(infoDto.getId());
         }
       };
-      Link bpmnXmlLink = new Link("get xml", new StreamResource(streamSource, infoDto.getKey() + ".bpmn20.xml", KickStartApplication.get()));
+      Link bpmnXmlLink = new Link("get xml", new StreamResource(streamSource, infoDto.getKey() + ".bpmn20.xml", KickstartApplication.get()));
 //      bpmnXmlLink.setIcon(xmlImage);
       actions.addComponent(bpmnXmlLink);
 

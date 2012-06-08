@@ -16,7 +16,7 @@ package org.activiti.kickstart.ui;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.activiti.kickstart.KickStartApplication;
+import org.activiti.kickstart.KickstartApplication;
 
 import com.vaadin.terminal.Resource;
 import com.vaadin.ui.Alignment;
@@ -126,19 +126,19 @@ public class MainMenuBar extends HorizontalLayout {
 	// Button Listener classes
 	private class CreateWorkflowButtonClickListener implements ClickListener {
 		public void buttonClick(ClickEvent event) {
-			KickStartApplication.get().getViewManager().showCreateWorkflowPage();
+			KickstartApplication.get().getViewManager().showCreateWorkflowPage();
 		}
 	}
 
 	private class EditWorkflowButtonClickListener implements ClickListener {
 		public void buttonClick(ClickEvent event) {
-			KickStartApplication.get().getViewManager().showEditWorkflowPage();
+			KickstartApplication.get().getViewManager().showEditWorkflowPage();
 		}
 	}
 
 	private class SettingsClickListener implements ClickListener {
 		public void buttonClick(ClickEvent event) {
-			KickStartApplication.get().getViewManager().showSettingsPage();
+			KickstartApplication.get().getViewManager().showSettingsPage();
 		}
 	}
 }

@@ -13,7 +13,7 @@
 
 package org.activiti.kickstart.ui;
 
-import org.activiti.kickstart.KickStartApplication;
+import org.activiti.kickstart.KickstartApplication;
 
 import com.vaadin.ui.Component;
 import com.vaadin.ui.CssLayout;
@@ -40,7 +40,7 @@ public class MainLayout extends VerticalLayout {
   protected MainMenuBar mainMenuBar;
   
   public MainLayout() {
-    this.viewManager = KickStartApplication.get().getViewManager();
+    this.viewManager = KickstartApplication.get().getViewManager();
     
     setSizeFull();
     addStyleName(STYLE_MAIN_WRAPPER);

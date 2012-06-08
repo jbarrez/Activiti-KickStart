@@ -15,6 +15,7 @@ package org.activiti.kickstart;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.ui.MainLayout;
 import org.activiti.kickstart.ui.ViewManager;
 
@@ -25,7 +26,7 @@ import com.vaadin.ui.Window;
 /**
  * @author Joram Barrez
  */
-public class KickStartApplication extends Application implements HttpServletRequestListener {
+public class KickstartApplication extends Application implements HttpServletRequestListener {
 
 	protected static final long serialVersionUID = 6197397757268207621L;
 
@@ -33,7 +34,10 @@ public class KickStartApplication extends Application implements HttpServletRequ
 	protected static final String THEME_NAME = "activiti";
 
 	// Thread local storage of instance for each user
-	protected static ThreadLocal<KickStartApplication> current = new ThreadLocal<KickStartApplication>();
+	protected static ThreadLocal<KickstartApplication> current = new ThreadLocal<KickstartApplication>();
+	
+	// services
+	protected KickstartService kickstartService;
 
 	// ui
 	protected ViewManager viewManager;
@@ -43,7 +47,7 @@ public class KickStartApplication extends Application implements HttpServletRequ
 		initMainWindow();
 	}
 
-	public static KickStartApplication get() {
+	public static KickstartApplication get() {
 		return current.get();
 	}
 
@@ -56,17 +60,24 @@ public class KickStartApplication extends Application implements HttpServletRequ
 		mainWindow.setContent(mainLayout);
 
 		this.viewManager = new ViewManager(mainLayout);
+		viewManager.showCreateWorkflowPage();
 	}
 
-	// GETTERS
-	// /////////////////////////////////////////////////////////////////////////
+	// GETTERS & SETTERS /////////////////////////////////////////////////////////////////////////
 
 	public ViewManager getViewManager() {
 		return viewManager;
 	}
+	
+	public KickstartService getKickstartService() {
+		return kickstartService;
+	}
 
-	// HttpServletRequestListener
-	// ///////////////////////////////////////////////////////
+	public void setKickstartService(KickstartService kickstartService) {
+		this.kickstartService = kickstartService;
+	}
+
+	// HttpServletRequestListener /////////////////////////////////////////////////////////
 
 	public void onRequestStart(HttpServletRequest request, HttpServletResponse response) {
 		// Set current application object as thread-local to make it easy accessible
