@@ -30,20 +30,20 @@ public interface KickstartService {
 	/**
 	 * Deploys the given workflow representation to the configured Activiti engine.
 	 */
-	String deployKickstartWorkflow(KickstartWorkflow kickstartWorkflowDto) throws JAXBException;
+	String deployWorkflow(KickstartWorkflow kickstartWorkflowDto) throws JAXBException;
 
 	/**
 	 * Retrieves a list of {@link KickstartWorkflowInfo} instances which
 	 * correspond with all the processes that are deployed to the configured
 	 * Activiti engine and which can are compatible with KickStart.
 	 */
-	List<KickstartWorkflowInfo> findKickstartWorkflowInformation();
+	List<KickstartWorkflowInfo> findWorkflowInformation();
 
 	/**
 	 * Fetches the process definition for the KickStart workflow from
 	 * the configured Activiti engine data store.
 	 */
-	KickstartWorkflow findKickstartWorkflowById(String id) throws JAXBException;
+	KickstartWorkflow findWorkflowById(String id) throws JAXBException;
 
 	/**
 	 * Returns an {@link InputStream} to the process image for the process definition
@@ -55,6 +55,6 @@ public interface KickstartService {
 	 * Returns an {@link InputStream} to the BPMN 2.0 xml for the process definition
 	 * with the given id (convenience method - this is already possible with Activiti).
 	 */
-	InputStream getProcessBpmnXml(String processDefinitionId);
+	InputStream getBpmnXml(String processDefinitionId);
 
 }

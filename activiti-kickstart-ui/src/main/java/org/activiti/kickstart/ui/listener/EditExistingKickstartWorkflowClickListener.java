@@ -38,7 +38,7 @@ public class EditExistingKickstartWorkflowClickListener implements
 	public void buttonClick(ClickEvent event) {
 		ViewManager viewManager = KickstartApplication.get().getViewManager();
 		try {
-			KickstartWorkflow workflow = adhocWorkflowService.findKickstartWorkflowById((String) event.getButton().getData());
+			KickstartWorkflow workflow = adhocWorkflowService.findWorkflowById((String) event.getButton().getData());
 			viewManager.showEditWorkflowPage(workflow);
 		} catch (Exception e) {
 			e.printStackTrace();

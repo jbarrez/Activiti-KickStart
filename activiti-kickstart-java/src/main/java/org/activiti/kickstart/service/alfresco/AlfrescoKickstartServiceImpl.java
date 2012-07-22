@@ -12,11 +12,14 @@
  */
 package org.activiti.kickstart.service.alfresco;
 
-import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBException;
 
@@ -26,49 +29,173 @@ import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.MarshallingService;
 import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.client.api.Folder;
+import org.apache.chemistry.opencmis.client.api.Repository;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.api.SessionFactory;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
+import org.apache.chemistry.opencmis.client.util.FileUtils;
+import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
+import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
 
 /**
  * @author Joram Barrez
  */
 public class AlfrescoKickstartServiceImpl implements KickstartService {
 	
-	protected Map<String, String> cmisSessionParameters;
-	
-	protected MarshallingService marshallingService;
+	private static final Logger LOGGER = Logger.getLogger(AlfrescoKickstartServiceImpl.class.getName());
 
-	public String deployKickstartWorkflow(KickstartWorkflow kickstartWorkflow) throws JAXBException {
+	protected String cmisUser;
+	protected String cmisPassword;
+	protected String cmisAtompubUrl;
+	protected Session cachedSession;
+
+	protected MarshallingService marshallingService;
+	
+	public AlfrescoKickstartServiceImpl(String cmisUser, String cmisPassword, String cmisAtompubUrl) {
+		this.cmisUser = cmisUser;
+		this.cmisPassword = cmisPassword;
+		this.cmisAtompubUrl = cmisPassword;
+	}
+	
+	protected Session getCmisSession() {
+		if (cachedSession == null) {
+			synchronized (this) {
+				if (cachedSession == null) {
+					Map<String, String> parameter = new HashMap<String, String>();
+					parameter.put(SessionParameter.USER, cmisUser);
+					parameter.put(SessionParameter.PASSWORD, cmisPassword);
+					parameter.put(SessionParameter.ATOMPUB_URL, cmisAtompubUrl);
+					parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+					
+					SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
+					cachedSession = sessionFactory.createSession(parameter);
+				}
+			}
+		}
+		return cachedSession;
+	}
+
+	public String deployWorkflow(KickstartWorkflow kickstartWorkflow) throws JAXBException {
+	
+		// TODO: JAXBException wegwerken
 		
-		String deploymentName = kickstartWorkflow.getName() + ".bpmn20.xml";
+//		LOGGER.info("deploying process");
+//		deployProcess();
+//
+//		LOGGER.info("deploying task model");
+//		deployTaskModel();
+//
+//		LOGGER.info("deploying form");
+//		deployForm();
+//
+//		LOGGER.info("Workflow deployment finished");
 		
+		return null; // Can't get the deployment id using the above calls ...
+	}
+
+	protected void deployProcess() {
 		SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
-		Session session = sessionFactory.createSession(cmisSessionParameters);
+		Map<String, String> parameter = new HashMap<String, String>();
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "admin");
+		parameter.put(SessionParameter.ATOMPUB_URL,"http://localhost:8080/alfresco/service/api/cmis");
+		parameter.put(SessionParameter.REPOSITORY_ID, findRepositoryId());
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		Session session = sessionFactory.createSession(parameter);
+
 		Folder workflowDefinitionFolder = (Folder) session.getObjectByPath("/Data Dictionary/Workflow Definitions");
-		
+
 		HashMap<String, Object> properties = new HashMap<String, Object>();
-		properties.put("cmis:name", deploymentName);
+		properties.put("cmis:name", "test_upload.bpmn20.xml");
 		properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition");
 		properties.put("bpm:definitionDeployed", true);
 		properties.put("bpm:engineId", "activiti");
-		
-		String workflowXml = marshallingService.marshallWorkflow(kickstartWorkflow);
-		ContentStream contentStream = new ContentStreamImpl("test_upload.bpmn20.xml", null, 
-				"application/xml", new ByteArrayInputStream(workflowXml.getBytes()));
-		
-		Document document = workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
-		return document.getId();
+
+//		FileInputStream fis = new FileInputStream("kickstart-tryout.bpmn20.xml");
+
+//		ContentStream contentStream = new ContentStreamImpl("test_upload.bpmn20.xml", null, "application/xml", fis);
+//		Document document = workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
 	}
 
-	public List<KickstartWorkflowInfo> findKickstartWorkflowInformation() {
+	protected String findRepositoryId() {
+		Map<String, String> parameter = new HashMap<String, String>();
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "admin");
+		parameter.put(SessionParameter.ATOMPUB_URL, "http://localhost:8080/alfresco/service/api/cmis");
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
+		List<Repository> repositories = sessionFactory.getRepositories(parameter);
+		return repositories.get(0).getId();
+	}
+
+	protected void deployTaskModel() {
+		SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
+		Map<String, String> parameter = new HashMap<String, String>();
+		parameter.put(SessionParameter.USER, "admin");
+		parameter.put(SessionParameter.PASSWORD, "admin");
+		parameter.put(SessionParameter.ATOMPUB_URL, "http://localhost:8080/alfresco/service/api/cmis");
+		parameter.put(SessionParameter.REPOSITORY_ID, findRepositoryId());
+		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+
+		Session session = sessionFactory.createSession(parameter);
+		Folder modelFolder = (Folder) session.getObjectByPath("/Data Dictionary/Models");
+
+		HashMap<String, Object> properties = new HashMap<String, Object>();
+		properties.put("cmis:name", "task_model.xml");
+		properties.put("cmis:objectTypeId", "D:cm:dictionaryModel");
+		properties.put("cm:modelActive", true);
+
+//		FileInputStream fis = new FileInputStream("task-model.xml");
+
+//		ContentStream contentStream = new ContentStreamImpl("task-model.xml", null, "application/xml", fis);
+//		Document document = modelFolder.createDocument(properties,contentStream, VersioningState.MAJOR);
+	}
+
+	protected void deployForm() {
+		HttpState state = new HttpState();
+		state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials("admin", "admin"));
+
+		PostMethod postMethod = new PostMethod("http://localhost:8081/share/page/modules/module");
+
+		try {
+
+//			String formConfig = FileUtils.readFileToString(new File("test-form-config.xml"));
+//			postMethod.setRequestEntity(new StringRequestEntity(formConfig, "application/xml", "UTF-8"));
+
+			// postMethod.setRequestHeader("Content-type", "text/xml");
+			HttpClient httpClient = new HttpClient();
+			int result = httpClient.executeMethod(null, postMethod, state);
+
+			// Display status code
+			System.out.println("Response status code: " + result);
+
+			// Display response
+			System.out.println("Response body: ");
+			System.out.println(postMethod.getResponseBodyAsString());
+		} catch (Throwable t) {
+			System.err.println("Error: " + t.getMessage());
+			t.printStackTrace();
+		} finally {
+			postMethod.releaseConnection();
+		}
+	}
+
+	public List<KickstartWorkflowInfo> findWorkflowInformation() {
 		throw new UnsupportedOperationException();
 	}
 
-	public KickstartWorkflow findKickstartWorkflowById(String id) throws JAXBException {
+	public KickstartWorkflow findWorkflowById(String id) throws JAXBException {
 		throw new UnsupportedOperationException();
 	}
 
@@ -76,10 +203,10 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		throw new UnsupportedOperationException();
 	}
 
-	public InputStream getProcessBpmnXml(String processDefinitionId) {
+	public InputStream getBpmnXml(String processDefinitionId) {
 		throw new UnsupportedOperationException();
 	}
-	
+
 	/**
 	 * Generates a valid bpmn 2.0 file name for the given process name.
 	 */
@@ -87,15 +214,30 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		return processName.replace(" ", "_") + ".bpmn20.xml";
 	}
 
-	
 	// Getters & Setters
-	
-	public Map<String, String> getCmisSessionParameters() {
-		return cmisSessionParameters;
+
+	public String getCmisUser() {
+		return cmisUser;
 	}
-	
-	public void setCmisSessionParameters(Map<String, String> cmisSessionParameters) {
-		this.cmisSessionParameters = cmisSessionParameters;
+
+	public void setCmisUser(String cmisUser) {
+		this.cmisUser = cmisUser;
+	}
+
+	public String getCmisPassword() {
+		return cmisPassword;
+	}
+
+	public void setCmisPassword(String cmisPassword) {
+		this.cmisPassword = cmisPassword;
+	}
+
+	public String getCmisAtompubUrl() {
+		return cmisAtompubUrl;
+	}
+
+	public void setCmisAtompubUrl(String cmisAtompubUrl) {
+		this.cmisAtompubUrl = cmisAtompubUrl;
 	}
 
 	public MarshallingService getMarshallingService() {
@@ -104,6 +246,6 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 	public void setMarshallingService(MarshallingService marshallingService) {
 		this.marshallingService = marshallingService;
-	}	
+	}
 
 }

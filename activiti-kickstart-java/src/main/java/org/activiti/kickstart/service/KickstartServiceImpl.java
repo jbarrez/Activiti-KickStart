@@ -68,7 +68,7 @@ public class KickstartServiceImpl implements KickstartService {
 	// Kickstart operations //////////////////////////////////////////////////////////////
 
 
-	public String deployKickstartWorkflow(KickstartWorkflow kickstartWorkflow) throws JAXBException {
+	public String deployWorkflow(KickstartWorkflow kickstartWorkflow) throws JAXBException {
 		String deploymentName = "Process " + kickstartWorkflow.getName();
 		String bpmn20XmlResourceName = generateBpmnResourceName(kickstartWorkflow.getName());
 		DeploymentBuilder deploymentBuilder = repositoryService.createDeployment().name(deploymentName);
@@ -85,7 +85,7 @@ public class KickstartServiceImpl implements KickstartService {
 		return deployment.getId();
 	}
 
-	public List<KickstartWorkflowInfo> findKickstartWorkflowInformation() {
+	public List<KickstartWorkflowInfo> findWorkflowInformation() {
 		List<ProcessDefinition> processDefinitions = repositoryService
 				.createProcessDefinitionQuery()
 				.processDefinitionKeyLike("adhoc_%")
@@ -94,7 +94,7 @@ public class KickstartServiceImpl implements KickstartService {
 		return transformationService.convertToWorkflowInfoList(processDefinitions);
 	}
 
-	public KickstartWorkflow findKickstartWorkflowById(String id)
+	public KickstartWorkflow findWorkflowById(String id)
 			throws JAXBException {
 		// Get process definition for key
 		ProcessDefinition processDefinition = repositoryService
@@ -127,7 +127,7 @@ public class KickstartServiceImpl implements KickstartService {
 				processDefinition.getDiagramResourceName());
 	};
 
-	public InputStream getProcessBpmnXml(String processDefinitionId) {
+	public InputStream getBpmnXml(String processDefinitionId) {
 		ProcessDefinition processDefinition = repositoryService
 				.createProcessDefinitionQuery()
 				.processDefinitionId(processDefinitionId).singleResult();

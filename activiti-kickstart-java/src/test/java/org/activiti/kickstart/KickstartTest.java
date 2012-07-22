@@ -14,8 +14,8 @@ import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.service.KickstartService;
+import org.activiti.kickstart.service.KickstartServiceFactory;
 import org.activiti.kickstart.service.MarshallingServiceImpl;
-import org.activiti.kickstart.service.ServiceLocator;
 import org.junit.After;
 import org.junit.Test;
 
@@ -62,8 +62,9 @@ public class KickstartTest extends ActivitiTestCase {
         wf.setName("Test process");
         wf.setTasks(getTaskList());
 
-        KickstartService service = ServiceLocator.getDefaultKickStartService();
-        service.deployKickstartWorkflow(wf);
+        KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
+        KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
+        service.deployWorkflow(wf);
 
         List<ProcessDefinition> definitions = processEngine.getRepositoryService()
             .createProcessDefinitionQuery()
@@ -72,7 +73,7 @@ public class KickstartTest extends ActivitiTestCase {
         assertEquals("Test process", definitions.get(0).getName());
 
         // get process as AdhocWorkflowDto
-        wf = service.findKickstartWorkflowById(definitions.get(0).getId());
+        wf = service.findWorkflowById(definitions.get(0).getId());
         assertEquals("Test process", wf.getName());
     }
 

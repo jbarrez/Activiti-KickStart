@@ -19,7 +19,7 @@ import java.util.List;
 import org.activiti.kickstart.KickstartApplication;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 import org.activiti.kickstart.service.KickstartService;
-import org.activiti.kickstart.service.ServiceLocator;
+import org.activiti.kickstart.service.KickstartServiceFactory;
 import org.activiti.kickstart.ui.listener.EditExistingKickstartWorkflowClickListener;
 import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 
@@ -113,7 +113,7 @@ public class SelectWorkflowPanel extends Panel {
   }
 
   protected void initWorkflowTableContents() {
-    List<KickstartWorkflowInfo> processDefinitions = kickstartService.findKickstartWorkflowInformation();
+    List<KickstartWorkflowInfo> processDefinitions = kickstartService.findWorkflowInformation();
     for (final KickstartWorkflowInfo infoDto : processDefinitions) {
       Item workflowItem = workflowTable.getItem(workflowTable.addItem());
       Button nameButton = new Button(infoDto.getName());
@@ -149,7 +149,7 @@ public class SelectWorkflowPanel extends Panel {
         private static final long serialVersionUID = -8875067466181823014L;
 
         public InputStream getStream() {
-          return KickstartApplication.get().getKickstartService().getProcessBpmnXml(infoDto.getId());
+          return KickstartApplication.get().getKickstartService().getBpmnXml(infoDto.getId());
         }
       };
       Link bpmnXmlLink = new Link("get xml", new StreamResource(streamSource, infoDto.getKey() + ".bpmn20.xml", KickstartApplication.get()));

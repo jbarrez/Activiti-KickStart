@@ -18,7 +18,7 @@ import org.junit.Test;
 
 public class KickstartServiceImplTest extends ActivitiTestCase {
 	
-	protected MarshallingService marshallingService = ServiceLocator.getMarshallingService();
+	protected MarshallingService marshallingService = new MarshallingServiceImpl();
 
     @Test
     public void testSimpleUserTask() throws Exception {
@@ -268,15 +268,17 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     @Test
     public void testDeployAndFindUserTaskWorkflow() throws Exception {
         KickstartWorkflow dto = createSimpleUserTaskWorkflow();
-        KickstartServiceImpl service = (KickstartServiceImpl) ServiceLocator.getDefaultKickStartService();
+        
+        KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
+        KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
         
         String bpmn = marshallingService.marshallWorkflow(dto);
         System.out.println(bpmn);
 
 
-        String deploymentId = service.deployKickstartWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
@@ -291,11 +293,13 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     @Test
     public void testDeployAndFindServiceTaskWorkflow() throws Exception {
         KickstartWorkflow dto = createSimpleServiceTaskWorkflow();
-        KickstartService service = ServiceLocator.getDefaultKickStartService();
+        
+        KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
+        KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
 
-        String deploymentId = service.deployKickstartWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
@@ -311,11 +315,13 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     @Test
     public void testDeployAndFindEmailTaskWorkflowWithSomeElements() throws Exception {
         KickstartWorkflow dto = createSimpleEmailTaskWorkflow();
-        KickstartService service = ServiceLocator.getDefaultKickStartService();
+        
+        KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
+        KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
 
-        String deploymentId = service.deployKickstartWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
@@ -372,11 +378,12 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         
         dto.addTask(taskDto);
         
-        KickstartServiceImpl service = (KickstartServiceImpl) ServiceLocator.getDefaultKickStartService();
+        KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
+        KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
 
-        String deploymentId = service.deployKickstartWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());
@@ -504,11 +511,13 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
     @Test
     public void testDeployAndFindScriptTaskWorkflow() throws Exception {
         KickstartWorkflow dto = createSimpleScriptTask();
-        KickstartServiceImpl service = (KickstartServiceImpl) ServiceLocator.getDefaultKickStartService();
+        
+        KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
+        KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
 
-        String deploymentId = service.deployKickstartWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto);
         String pid = getDeployedProcessDefinitionId(deploymentId);
-        KickstartWorkflow deployedDto = service.findKickstartWorkflowById(pid);
+        KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
         assertEquals(dto.getName(), deployedDto.getName());
         assertEquals(dto.getDescription(), deployedDto.getDescription());

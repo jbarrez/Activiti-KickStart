@@ -17,7 +17,7 @@ import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.service.KickstartService;
-import org.activiti.kickstart.service.ServiceLocator;
+import org.activiti.kickstart.service.KickstartServiceFactory;
 import org.activiti.kickstart.ui.ViewManager;
 import org.activiti.kickstart.ui.popup.ErrorPopupWindow;
 import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
@@ -162,7 +162,7 @@ public class KickstartWorkflowPanel extends Panel {
 
 			public void buttonClick(ClickEvent event) {
 				try {
-					kickStartService.deployKickstartWorkflow(createWorkflow());
+					kickStartService.deployWorkflow(createWorkflow());
 					Panel successPanel = new Panel();
 					successPanel.setStyleName(Reindeer.PANEL_LIGHT);
 					Label successLabel = new Label("Process successfully deployed");
