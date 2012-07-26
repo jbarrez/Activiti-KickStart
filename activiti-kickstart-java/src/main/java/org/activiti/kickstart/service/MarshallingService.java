@@ -12,8 +12,6 @@
  */
 package org.activiti.kickstart.service;
 
-import javax.xml.bind.JAXBException;
-
 import org.activiti.kickstart.bpmn20.model.Definitions;
 import org.activiti.kickstart.bpmn20.model.FlowElement;
 import org.activiti.kickstart.bpmn20.model.activity.type.ScriptTask;
@@ -36,7 +34,7 @@ public interface MarshallingService {
 	/**
 	 * Marshalls the given {@link KickstartWorkflow} to a BPMN 2.0 compatible XML.
 	 */
-	String marshallWorkflow(KickstartWorkflow kickstartWorkflowDto) throws JAXBException;
+	String marshallWorkflow(KickstartWorkflow kickstartWorkflowDto);
 	
 	/**
 	 * Converts the given {@link KickstartWorkflow} into a JAXB representation of the BPMN 2.0 business process.

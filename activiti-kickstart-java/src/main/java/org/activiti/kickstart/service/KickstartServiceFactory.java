@@ -43,6 +43,9 @@ public class KickstartServiceFactory {
 	public KickstartService createAlfrescoKickstartService(String cmisUser, String cmisPassword, String cmisAtompubUrl) {
 		AlfrescoKickstartServiceImpl kickstartService = new AlfrescoKickstartServiceImpl(cmisUser, cmisPassword, cmisAtompubUrl);
 		
+		MarshallingService marshallingService = new MarshallingServiceImpl();
+		kickstartService.setMarshallingService(marshallingService);
+		
 		return kickstartService;
 	}
 

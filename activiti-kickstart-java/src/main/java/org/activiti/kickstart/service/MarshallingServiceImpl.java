@@ -58,12 +58,16 @@ import org.activiti.kickstart.util.ExpressionUtil;
  */
 public class MarshallingServiceImpl implements MarshallingService {
 	
-	public String marshallWorkflow(KickstartWorkflow kickstartWorkflow) throws JAXBException {
-		JAXBContext jaxbContext = JAXBContext.newInstance(Definitions.class);
-		Marshaller marshaller = jaxbContext.createMarshaller();
-		StringWriter writer = new StringWriter();
-		marshaller.marshal(convertToBpmn(kickstartWorkflow), writer);
-		return writer.toString();
+	public String marshallWorkflow(KickstartWorkflow kickstartWorkflow) {
+		try {
+			JAXBContext jaxbContext = JAXBContext.newInstance(Definitions.class);
+			Marshaller marshaller = jaxbContext.createMarshaller();
+			StringWriter writer = new StringWriter();
+			marshaller.marshal(convertToBpmn(kickstartWorkflow), writer);
+			return writer.toString();
+		} catch (JAXBException e) {
+			throw new RuntimeException("Could not marshal workflow", e);
+		}
 	}
 	
 	/**

@@ -55,11 +55,15 @@ public class WorkflowResource extends BaseResource {
 					workflowTask.setStartWithPrevious(taskNode.path("startWithPrevious").getBooleanValue());
 				}
 			}
+			
+			// Actually deploy this workflow
+			getKickstartService().deployWorkflow(workflow);
 
-			// Build result
+			// Return result
 			return "Found " + workflow.getTasks().size() + " tasks";
 
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException("Could not deploy workflow: " + e.getMessage());
 		}
 

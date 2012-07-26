@@ -15,8 +15,6 @@ package org.activiti.kickstart.service;
 import java.io.InputStream;
 import java.util.List;
 
-import javax.xml.bind.JAXBException;
-
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 
@@ -30,7 +28,7 @@ public interface KickstartService {
 	/**
 	 * Deploys the given workflow representation to the configured Activiti engine.
 	 */
-	String deployWorkflow(KickstartWorkflow kickstartWorkflowDto) throws JAXBException;
+	String deployWorkflow(KickstartWorkflow kickstartWorkflowDto);
 
 	/**
 	 * Retrieves a list of {@link KickstartWorkflowInfo} instances which
@@ -43,7 +41,7 @@ public interface KickstartService {
 	 * Fetches the process definition for the KickStart workflow from
 	 * the configured Activiti engine data store.
 	 */
-	KickstartWorkflow findWorkflowById(String id) throws JAXBException;
+	KickstartWorkflow findWorkflowById(String id);
 
 	/**
 	 * Returns an {@link InputStream} to the process image for the process definition

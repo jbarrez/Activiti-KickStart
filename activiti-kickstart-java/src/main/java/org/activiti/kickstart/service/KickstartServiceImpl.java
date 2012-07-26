@@ -37,38 +37,11 @@ public class KickstartServiceImpl implements KickstartService {
 	protected RepositoryService repositoryService;
 	protected TransformationService transformationService;
 	protected MarshallingService marshallingService;
-
-	// Getters and Setters //////////////////////////////////////////////////////////////
-	
-	public RepositoryService getRepositoryService() {
-		return repositoryService;
-	}
-
-	public void setRepositoryService(RepositoryService repositoryService) {
-		this.repositoryService = repositoryService;
-	}
-
-	public TransformationService getTransformationService() {
-		return transformationService;
-	}
-
-	public void setTransformationService(TransformationService transformationService) {
-		this.transformationService = transformationService;
-	}
-	
-	public MarshallingService getMarshallingService() {
-		return marshallingService;
-	}
-	
-	public void setMarshallingService(MarshallingService marshallingService) {
-		this.marshallingService = marshallingService;
-	}
-	
 	
 	// Kickstart operations //////////////////////////////////////////////////////////////
 
 
-	public String deployWorkflow(KickstartWorkflow kickstartWorkflow) throws JAXBException {
+	public String deployWorkflow(KickstartWorkflow kickstartWorkflow) {
 		String deploymentName = "Process " + kickstartWorkflow.getName();
 		String bpmn20XmlResourceName = generateBpmnResourceName(kickstartWorkflow.getName());
 		DeploymentBuilder deploymentBuilder = repositoryService.createDeployment().name(deploymentName);
@@ -78,9 +51,8 @@ public class KickstartServiceImpl implements KickstartService {
 		deploymentBuilder.addInputStream(bpmn20XmlResourceName.replace(".bpmn20.xml", ".png"), diagramGenerator.execute());
 
 		// bpmn 2.0 xml
-		deploymentBuilder.addString(bpmn20XmlResourceName,	marshallingService.marshallWorkflow(kickstartWorkflow));
-
-		// deploy the whole package
+    	String workflowXml = marshallingService.marshallWorkflow(kickstartWorkflow);
+		deploymentBuilder.addString(bpmn20XmlResourceName,workflowXml);
 		Deployment deployment = deploymentBuilder.deploy();
 		return deployment.getId();
 	}
@@ -94,8 +66,7 @@ public class KickstartServiceImpl implements KickstartService {
 		return transformationService.convertToWorkflowInfoList(processDefinitions);
 	}
 
-	public KickstartWorkflow findWorkflowById(String id)
-			throws JAXBException {
+	public KickstartWorkflow findWorkflowById(String id) {
 		// Get process definition for key
 		ProcessDefinition processDefinition = repositoryService
 				.createProcessDefinitionQuery().processDefinitionId(id)
@@ -110,6 +81,9 @@ public class KickstartServiceImpl implements KickstartService {
 			JAXBContext jc = JAXBContext.newInstance(Definitions.class);
 			Unmarshaller um = jc.createUnmarshaller();
 			definitions = (Definitions) um.unmarshal(is);
+			
+		} catch (JAXBException e) {
+			throw new RuntimeException("Could not unmarshall workflow xml", e);
 		} finally {
 			IoUtil.closeSilently(is);
 		}
@@ -144,6 +118,32 @@ public class KickstartServiceImpl implements KickstartService {
 	 */
 	protected String generateBpmnResourceName(String processName) {
 		return processName.replace(" ", "_") + ".bpmn20.xml";
+	}
+	
+	// Getters and Setters //////////////////////////////////////////////////////////////
+	
+	public RepositoryService getRepositoryService() {
+		return repositoryService;
+	}
+
+	public void setRepositoryService(RepositoryService repositoryService) {
+		this.repositoryService = repositoryService;
+	}
+
+	public TransformationService getTransformationService() {
+		return transformationService;
+	}
+
+	public void setTransformationService(TransformationService transformationService) {
+		this.transformationService = transformationService;
+	}
+	
+	public MarshallingService getMarshallingService() {
+		return marshallingService;
+	}
+	
+	public void setMarshallingService(MarshallingService marshallingService) {
+		this.marshallingService = marshallingService;
 	}
 
 }
