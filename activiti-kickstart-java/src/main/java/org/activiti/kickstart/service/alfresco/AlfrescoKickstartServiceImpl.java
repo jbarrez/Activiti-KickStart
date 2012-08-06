@@ -13,8 +13,11 @@
 package org.activiti.kickstart.service.alfresco;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -23,8 +26,11 @@ import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.MarshallingService;
+import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.client.api.Folder;
+import org.apache.chemistry.opencmis.client.api.ItemIterable;
+import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Repository;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.api.SessionFactory;
@@ -44,10 +50,31 @@ import org.apache.commons.httpclient.methods.PostMethod;
  * @author Joram Barrez
  */
 public class AlfrescoKickstartServiceImpl implements KickstartService {
-	
+	      
 	private static final Logger LOGGER = Logger.getLogger(AlfrescoKickstartServiceImpl.class.getName());
 	
 	private static final String WORKFLOW_DEFINITION_FOLDER = "/Data Dictionary/Workflow Definitions";
+	
+	private static final String DATA_DICTIONARY_FOLDER = "/Data Dictionary/Models";
+	
+	private static final String TASK_MODEL_NAME = "$task_model_name$";
+	
+	private static final String TASK_MODEL_XML =
+			"<?xml version='1.0' encoding='UTF-8'?>"
+			+ "<model name='ks:taskModel' xmlns='http://www.alfresco.org/model/dictionary/1.0'>"
+			+ "<imports>"
+			+ "  <import uri='http://www.alfresco.org/model/dictionary/1.0' prefix='d' />"
+			+ "  <import uri='http://www.alfresco.org/model/bpm/1.0' prefix='bpm' />"
+			+ "</imports>"
+			+ "<namespaces>"
+			+ "  <namespace uri='http://www.alfresco.org/model/kickstart/1.0' prefix='ks' />"
+			+ "</namespaces>"
+			+ "<types>"
+			+ "  <type name='ks:" + TASK_MODEL_NAME + "'>"
+			+ "    <parent>bpm:startTask</parent>"
+			+ "  </type>"
+			+ "</types>"
+			+ "</model>";
 
 	protected String cmisUser;
 	protected String cmisPassword;
@@ -91,7 +118,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 //		LOGGER.info("deploying task model");
 //		deployTaskModel();
-//
+
 //		LOGGER.info("deploying form");
 //		deployForm();
 //
@@ -126,27 +153,24 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		return document.getId();
 	}
 
-	protected void deployTaskModel() {
-//		SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
-//		Map<String, String> parameter = new HashMap<String, String>();
-//		parameter.put(SessionParameter.USER, "admin");
-//		parameter.put(SessionParameter.PASSWORD, "admin");
-//		parameter.put(SessionParameter.ATOMPUB_URL, "http://localhost:8080/alfresco/service/api/cmis");
-////		parameter.put(SessionParameter.REPOSITORY_ID, findRepositoryId());
-//		parameter.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
-//
-//		Session session = sessionFactory.createSession(parameter);
-//		Folder modelFolder = (Folder) session.getObjectByPath("/Data Dictionary/Models");
-//
+	private void deployTaskModel() {
+		
+//		Session session = getCmisSession();
+//		Folder modelFolder = (Folder) session.getObjectByPath(DATA_DICTIONARY_FOLDER);
+//		
 //		HashMap<String, Object> properties = new HashMap<String, Object>();
 //		properties.put("cmis:name", "task_model.xml");
 //		properties.put("cmis:objectTypeId", "D:cm:dictionaryModel");
 //		properties.put("cm:modelActive", true);
-
+//		
 //		FileInputStream fis = new FileInputStream("task-model.xml");
-
-//		ContentStream contentStream = new ContentStreamImpl("task-model.xml", null, "application/xml", fis);
-//		Document document = modelFolder.createDocument(properties,contentStream, VersioningState.MAJOR);
+//		
+//		 ContentStream contentStream = new ContentStreamImpl("task-model.xml", null,
+//		            "application/xml",fis);
+//		
+//		
+//		Document document = modelFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
+//		System.out.println(document.getName());
 	}
 
 	protected void deployForm() {
