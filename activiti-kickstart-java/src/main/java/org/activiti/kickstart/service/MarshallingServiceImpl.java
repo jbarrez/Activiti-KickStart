@@ -106,6 +106,8 @@ public class MarshallingServiceImpl implements MarshallingService {
 		StartEvent startEvent = new StartEvent();
 		startEvent.setId(KickstartWorkflow.START_NAME);
 		startEvent.setInitiator("initiator");
+		// TODO: For now, fixed start-task is used instead of adhoc-created one. 
+		startEvent.setFormKey("ks:genericStartTask");
 		process.getFlowElement().add(startEvent);
 
 		// We'll group tasks by each 'task block' that is to be executed in parallel

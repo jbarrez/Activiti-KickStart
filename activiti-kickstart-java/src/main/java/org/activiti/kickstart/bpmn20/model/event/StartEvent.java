@@ -61,6 +61,9 @@ public class StartEvent
     
     @XmlAttribute(name = "initiator", namespace = "http://activiti.org/bpmn")
     protected String initiator;
+    
+    @XmlAttribute(name = "formKey", namespace = "http://activiti.org/bpmn")
+    protected String formKey;
 
     /* Getter & Setter */
     
@@ -94,6 +97,16 @@ public class StartEvent
     
     public void setInitiator(String initiator) {
       this.initiator = initiator;
+    }
+    
+    
+    public void setFormKey(String formKey) {
+      this.formKey = formKey;
+    }
+    
+    
+    public String getFormKey() {
+      return formKey;
     }
 
 }

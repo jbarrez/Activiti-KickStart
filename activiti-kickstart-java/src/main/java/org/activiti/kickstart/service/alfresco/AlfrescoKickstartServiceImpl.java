@@ -13,24 +13,24 @@
 package org.activiti.kickstart.service.alfresco;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.activiti.kickstart.dto.KickstartForm;
+import org.activiti.kickstart.dto.KickstartFormProperty;
+import org.activiti.kickstart.dto.KickstartTask;
+import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 import org.activiti.kickstart.service.KickstartService;
+import org.activiti.kickstart.service.KickstartServiceFactory;
 import org.activiti.kickstart.service.MarshallingService;
-import org.apache.chemistry.opencmis.client.api.CmisObject;
 import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.client.api.Folder;
-import org.apache.chemistry.opencmis.client.api.ItemIterable;
-import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Repository;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.api.SessionFactory;
@@ -60,21 +60,100 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	private static final String TASK_MODEL_NAME = "$task_model_name$";
 	
 	private static final String TASK_MODEL_XML =
-			"<?xml version='1.0' encoding='UTF-8'?>"
-			+ "<model name='ks:taskModel' xmlns='http://www.alfresco.org/model/dictionary/1.0'>"
+			"<?xml version=''1.0'' encoding=''UTF-8''?>"
+			+ "<model name=''ks:taskModel'' xmlns=''http://www.alfresco.org/model/dictionary/1.0''>"
 			+ "<imports>"
-			+ "  <import uri='http://www.alfresco.org/model/dictionary/1.0' prefix='d' />"
-			+ "  <import uri='http://www.alfresco.org/model/bpm/1.0' prefix='bpm' />"
+			+ "  <import uri=''http://www.alfresco.org/model/dictionary/1.0'' prefix=''d'' />"
+			+ "  <import uri=''http://www.alfresco.org/model/bpm/1.0'' prefix=''bpm'' />"
 			+ "</imports>"
 			+ "<namespaces>"
-			+ "  <namespace uri='http://www.alfresco.org/model/kickstart/1.0' prefix='ks' />"
+			+ "  <namespace uri=''http://www.alfresco.org/model/kickstart/1.0'' prefix=''ks'' />"
 			+ "</namespaces>"
 			+ "<types>"
-			+ "  <type name='ks:" + TASK_MODEL_NAME + "'>"
+			+ "  <type name=''ks:genericStartTask''>"
 			+ "    <parent>bpm:startTask</parent>"
 			+ "  </type>"
+			+ "  {0}"
 			+ "</types>"
 			+ "</model>";
+	
+	private static final String TASK_MODEL_TASK_XML = "<type name=''ks:{0}''>" +
+      "<parent>bpm:task</parent>" + 
+	    "{1}" +    
+      "</type>";
+	
+	 private static final String TASK_MODEL_PROPERTY_XML = "<property name=''{0}''>"+
+      "<type>{1}</type>" +
+	    "<mandatory>{2}</mandatory>" +
+      "</property>";
+	 
+	 private static final String TASK_FORM_CONFIG_XML = "<config evaluator=''task-type'' condition=''ks:{0}'' replace=''true''>" +
+      "<forms>" +
+        "<form>" +
+          "<field-visibility>"+
+           "{1}" +
+          "</field-visibility>" +
+          "<appearance>"+
+            "<set id='''' appearance=''title'' label-id=''General Info'' />"+
+            "<set id=''info'' appearance='''' label-id=''Info'' />"+
+            // Add bpm_description as read-only 'info' field
+            "<field id=''bpm_description'' label-id=''Description'' set=''info'' ><control template=''/org/alfresco/components/form/controls/info.ftl'' /></field>" +
+            "{2}" +
+          "</appearance>" +
+        "</form>" +
+      "</forms>"+
+    "</config>";
+	 
+	 private static final String TASK_FORM_CONFIG_VISIBILITY = "<show id=''{0}'' />";
+	 
+	 private static final String TASK_FORM_CONFIG_APPEARANCE = "<field id=''{0}'' label-id=''{1}'' set=''info''>" +
+            "</field>";
+	 
+	 private static final String FORM_CONFIG_XML = "<?xml version=''1.0'' encoding=''UTF-8'' standalone=''yes''?>" +
+	         "<module>"+
+	         " <id>test_form</id>"+
+	         " <auto-deploy>true</auto-deploy> "+
+	         " <configurations>"+
+	         "   <!-- Start task form -->"+
+	         "    <config evaluator=''string-compare'' condition=''activiti$adhoc_{0}''>"+
+	         "       <forms>"+
+	         "          <form>"+
+	         "             <field-visibility>"+
+	         "                <show id=''bpm:workflowDescription'' />"+
+	         "                <show id=''bpm:workflowDueDate'' />"+
+	         "                <show id=''bpm:workflowPriority'' />"+
+	         "                <show id=''packageItems'' />"+
+	         "             </field-visibility>"+
+	         "             <appearance>"+
+	         "                <set id='''' appearance=''title'' label-id=''General info'' />"+
+	         "                <set id=''info'' appearance='''' template=''/org/alfresco/components/form/2-column-set.ftl'' />"+
+	         "                <set id=''assignee'' appearance=''title'' label-id=''workflow.set.assignee'' />"+
+	         "                <set id=''items'' appearance=''title'' label-id=''workflow.set.items'' />"+
+	         "                <set id=''other'' appearance=''title'' label-id=''workflow.set.other'' />  "+               
+	         "                <field id=''bpm:workflowDescription'' label-id=''workflow.field.message''>"+
+	         "                   <control template=''/org/alfresco/components/form/controls/textarea.ftl''>"+
+	         "                      <control-param name=''style''>width: 95%</control-param>"+
+	         "                   </control>"+
+	         "                </field>"+
+	         "                <field id=''bpm:workflowDueDate'' label-id=''workflow.field.due'' set=''info''>"+
+	         "                   <control template=''/org/alfresco/components/form/controls/date.ftl''>"+
+	         "                    <control-param name=''showTime''>false</control-param>"+
+	         "                    <control-param name=''submitTime''>false</control-param>"+
+	         "                   </control>"+
+	         "                </field>"+
+	         "                <field id=''bpm:workflowPriority'' label-id=''workflow.field.priority'' set=''info''>"+
+	         "                   <control template=''/org/alfresco/components/form/controls/workflow/priority.ftl'' />"+
+	         "                </field>"+
+	         "                <field id=''packageItems'' set=''items'' />"+
+	         "             </appearance>"+
+	         "          </form>"+
+	         "       </forms>"+
+	         "    </config>"+
+	         "      <!-- Other task forms -->"+
+	         "      {1}"+
+	         " </configurations>"+
+	         "</module>";
+
 
 	protected String cmisUser;
 	protected String cmisPassword;
@@ -153,7 +232,64 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		return document.getId();
 	}
 
-	private void deployTaskModel() {
+	private void deployTaskModel(KickstartWorkflow workflow) {
+
+	  // All task-models
+	  StringBuilder taskModelsString = new StringBuilder();
+	  
+	  // All form models
+	  StringBuilder formConfigString = new StringBuilder();
+	  
+	  for(KickstartTask task : workflow.getTasks()) {
+	    if(task instanceof KickstartUserTask) {
+	      KickstartUserTask userTask = (KickstartUserTask) task;
+	      
+	      StringBuilder typeString = new StringBuilder();
+	      StringBuilder formAppearanceString = new StringBuilder();
+	      StringBuilder formVisibilityString = new StringBuilder();
+	      
+	      // Get form-propertes
+	      for(KickstartFormProperty prop : userTask.getForm().getFormProperties()) {
+	        // Property in type-definition
+	        typeString.append(
+	                MessageFormat.format(TASK_MODEL_PROPERTY_XML, 
+	                        createFriendlyName(prop.getProperty()), 
+	                        getAlfrescoModelType(prop.getType()),
+	                        prop.isRequired()));
+	        
+	        // Visibility in form-config
+	        formVisibilityString.append(MessageFormat.format(TASK_FORM_CONFIG_VISIBILITY, createFriendlyName(prop.getProperty())));
+	        
+	        // Appearance on screen in form-config
+	        formAppearanceString.append(MessageFormat.format(TASK_FORM_CONFIG_APPEARANCE, 
+	                createFriendlyName(prop.getProperty()),
+	                prop.getProperty()));
+	        
+	      }
+	      
+	      // Add name and all form-properties to model XML
+	      taskModelsString.append(MessageFormat.format(TASK_MODEL_TASK_XML, 
+	              userTask.getId(),
+	              typeString.toString()));
+	      
+	      // Add task-form-config
+	      formConfigString.append(MessageFormat.format(TASK_FORM_CONFIG_XML, 
+	              userTask.getId(),
+	              formVisibilityString.toString(),
+	              formAppearanceString.toString()));
+	    }
+	    
+	    // Finally, wrap all taskdefinitions is right XML -> this is the FULL model file, including generic start-task
+	    System.out.println(MessageFormat.format(TASK_MODEL_XML, taskModelsString.toString()));
+	    
+	    // Wrap all form-configs in right XL -> this is the FULL form-config file, including generic start-task definition
+	    String processName = workflow.getName().replace(" ", "_"); // process-name as defined in BPMN20.xml
+	    
+	    System.out.println(MessageFormat.format(FORM_CONFIG_XML, processName, formConfigString.toString()));
+	  }
+	  
+
+
 		
 //		Session session = getCmisSession();
 //		Folder modelFolder = (Folder) session.getObjectByPath(DATA_DICTIONARY_FOLDER);
@@ -172,8 +308,45 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 //		Document document = modelFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
 //		System.out.println(document.getName());
 	}
+	
+	public static void main(String[] args) {
+    
+	  KickstartWorkflow workflow = new KickstartWorkflow();
+	  workflow.setName("name");
+	  KickstartUserTask task = new KickstartUserTask();
+	  task.setId("1234");
+	  KickstartForm form = new KickstartForm();
+	  KickstartFormProperty prop1 = new KickstartFormProperty();
+	  prop1.setProperty("Some variable");
+	  prop1.setType("text");
+	  
+	  form.addFormProperty(prop1);
+	  
+	  task.setForm(form);
+	  
+	  workflow.addTask(task);
+	  
+	  new AlfrescoKickstartServiceImpl(null, null, null).deployTaskModel(workflow);
+	  
+  }
 
-	protected void deployForm() {
+	private Object getAlfrescoModelType(String type) {
+	  
+	  if(type.equals("text")) {
+	    return "d:text";
+	  } else if(type.equals("date")) {
+	    return "d:date";
+  	} else if(type.equals("number")) {
+  	  return "d:long";
+  	}
+    return null;
+  }
+
+  private Object createFriendlyName(String property) {
+    return property.toLowerCase().replace(" ", "_");
+  }
+
+  protected void deployForm() {
 		HttpState state = new HttpState();
 		state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials("admin", "admin"));
 
