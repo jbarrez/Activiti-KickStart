@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.xml.bind.JAXBException;
-
+import org.activiti.kickstart.dto.KickstartForm;
+import org.activiti.kickstart.dto.KickstartFormProperty;
 import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
@@ -46,21 +46,40 @@ public class WorkflowResource extends BaseResource {
 				Iterator<JsonNode> taskIterator = taskArray.iterator();
 				while (taskIterator.hasNext()) {
 
+					JsonNode taskNode = taskIterator.next();
+					
 					KickstartUserTask workflowTask = new KickstartUserTask();
 					workflowTasks.add(workflowTask);
-
-					JsonNode taskNode = taskIterator.next();
+					
+					// Task details
 					workflowTask.setName(taskNode.path("name").getTextValue());
 					workflowTask.setDescription(taskNode.path("description").getTextValue());
 					workflowTask.setStartWithPrevious(taskNode.path("startWithPrevious").getBooleanValue());
+					
+					// Task form
+					JsonNode formArray = taskNode.path("form");
+					if (formArray != null && formArray.isArray()) {
+						
+						KickstartForm kickstartForm = new KickstartForm();
+						workflowTask.setForm(kickstartForm);
+						
+						Iterator<JsonNode> formIterator = formArray.iterator();
+						while (formIterator.hasNext()) {
+							KickstartFormProperty formProperty = new KickstartFormProperty();
+							kickstartForm.addFormProperty(formProperty);
+							
+							JsonNode formEntry = formIterator.next();
+							formProperty.setProperty(formEntry.path("name").getTextValue());
+							formProperty.setType(formEntry.path("type").getTextValue());
+							formProperty.setRequired(formEntry.path("isRequired").getTextValue().equals("true"));
+						}
+						
+					}
 				}
 			}
 			
 			// Actually deploy this workflow
-			getKickstartService().deployWorkflow(workflow);
-
-			// Return result
-			return "Found " + workflow.getTasks().size() + " tasks";
+			return getKickstartService().deployWorkflow(workflow);
 
 		} catch (Exception e) {
 			e.printStackTrace();
