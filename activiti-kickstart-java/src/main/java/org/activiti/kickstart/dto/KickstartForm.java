@@ -19,29 +19,41 @@ import java.util.List;
  * @author Joram Barrez
  */
 public class KickstartForm {
+	
+	protected String formKey;
 
-  protected List<KickstartFormProperty> formProperties = new ArrayList<KickstartFormProperty>();
+	protected List<KickstartFormProperty> formProperties = new ArrayList<KickstartFormProperty>();
 
-  public List<KickstartFormProperty> getFormProperties() {
-    return formProperties;
-  }
-  public void setFormProperties(List<KickstartFormProperty> formProperties) {
-    this.formProperties = formProperties;
-  }
-  public void addFormProperty(KickstartFormProperty formProperty) {
-    formProperties.add(formProperty);
-  }
+	public List<KickstartFormProperty> getFormProperties() {
+		return formProperties;
+	}
 
-  public String toString() {
-    StringBuilder strb = new StringBuilder();
-    for (KickstartFormProperty property : formProperties) {
-      strb.append(property.getProperty() + ";");
-      strb.append(property.getType() + ";");
-      strb.append(property.isRequired());
-      strb.append("@");
-    }
-    strb.deleteCharAt(strb.length() - 1);
-    return strb.toString();
-  }
-  
+	public void setFormProperties(List<KickstartFormProperty> formProperties) {
+		this.formProperties = formProperties;
+	}
+
+	public void addFormProperty(KickstartFormProperty formProperty) {
+		formProperties.add(formProperty);
+	}
+
+	public String getFormKey() {
+		return formKey;
+	}
+
+	public void setFormKey(String formKey) {
+		this.formKey = formKey;
+	}
+
+	public String toString() {
+		StringBuilder strb = new StringBuilder();
+		for (KickstartFormProperty property : formProperties) {
+			strb.append(property.getProperty() + ";");
+			strb.append(property.getType() + ";");
+			strb.append(property.isRequired());
+			strb.append("@");
+		}
+		strb.deleteCharAt(strb.length() - 1);
+		return strb.toString();
+	}
+
 }

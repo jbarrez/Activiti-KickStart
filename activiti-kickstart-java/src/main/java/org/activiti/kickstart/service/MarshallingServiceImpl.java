@@ -106,8 +106,11 @@ public class MarshallingServiceImpl implements MarshallingService {
 		StartEvent startEvent = new StartEvent();
 		startEvent.setId(KickstartWorkflow.START_NAME);
 		startEvent.setInitiator("initiator");
+		
 		// TODO: For now, fixed start-task is used instead of adhoc-created one. 
 		startEvent.setFormKey("ks:genericStartTask");
+		// TODO: end of hack by frederik :-)
+		
 		process.getFlowElement().add(startEvent);
 
 		// We'll group tasks by each 'task block' that is to be executed in parallel
@@ -211,6 +214,7 @@ public class MarshallingServiceImpl implements MarshallingService {
 
 		// form
 		if (kickstartUserTask.getForm() != null) {
+			userTask.setFormKey(kickstartUserTask.getForm().getFormKey());
 			List<ActivitiFormProperty> formProperties = new ArrayList<ActivitiFormProperty>();
 			for (KickstartFormProperty formPropertyDto : kickstartUserTask.getForm().getFormProperties()) {
 				ActivitiFormProperty formProperty = new ActivitiFormProperty();

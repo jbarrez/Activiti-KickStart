@@ -3,6 +3,7 @@ package org.activiti.kickstart;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.activiti.kickstart.dto.KickstartForm;
 import org.activiti.kickstart.dto.KickstartFormProperty;
@@ -16,6 +17,8 @@ import org.restlet.resource.Post;
 
 public class WorkflowResource extends BaseResource {
 
+	private static final Logger LOGGER = Logger.getLogger(WorkflowResource.class.getName());
+	
 	@Post
 	public String deployWorkflow(Representation representation) {
 
@@ -24,6 +27,7 @@ public class WorkflowResource extends BaseResource {
 
 		try {
 			JsonNode json = new ObjectMapper().readTree(representation.getText());
+			LOGGER.info("Received json: " + json.toString());
 
 			// Workflow name
 			String name = json.path("name").getTextValue();

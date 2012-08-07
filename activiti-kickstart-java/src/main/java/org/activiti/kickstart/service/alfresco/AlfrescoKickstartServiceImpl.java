@@ -18,6 +18,7 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import org.activiti.kickstart.dto.KickstartFormProperty;
@@ -60,7 +61,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	
 	private static final String TASK_MODEL_XML =
 			"<?xml version=''1.0'' encoding=''UTF-8''?>"
-			+ "<model name=''ks:taskModel'' xmlns=''http://www.alfresco.org/model/dictionary/1.0''>"
+			+ "<model name=''ks:taskModel_{0}'' xmlns=''http://www.alfresco.org/model/dictionary/1.0''>"
 			+ "<imports>"
 			+ "  <import uri=''http://www.alfresco.org/model/dictionary/1.0'' prefix=''d'' />"
 			+ "  <import uri=''http://www.alfresco.org/model/bpm/1.0'' prefix=''bpm'' />"
@@ -72,7 +73,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 			+ "  <type name=''ks:genericStartTask''>"
 			+ "    <parent>bpm:startTask</parent>"
 			+ "  </type>"
-			+ "  {0}"
+			+ "    {1}"
 			+ "</types>"
 			+ "</model>";
 	
@@ -81,7 +82,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	    "{1}" +    
       "</type>";
 	
-	 private static final String TASK_MODEL_PROPERTY_XML = "<property name=''{0}''>"+
+	 private static final String TASK_MODEL_PROPERTY_XML = "<property name=''ks:{0}''>"+
       "<type>{1}</type>" +
 	    "<mandatory>{2}</mandatory>" +
       "</property>";
@@ -191,16 +192,22 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	}
 
 	public String deployWorkflow(KickstartWorkflow kickstartWorkflow) {
-		LOGGER.info("deploying process");
-		String processDocumentId = deployProcess(kickstartWorkflow);
-
 		LOGGER.info("deploying task model");
 		deployTaskModel(kickstartWorkflow);
+		
+		LOGGER.info("deploying process");
+		String processDocumentId = deployProcess(kickstartWorkflow);
 		
 		return processDocumentId; // Can't get the deployment id, so returning the document id
 	}
 
 	protected String deployProcess(KickstartWorkflow kickstartWorkflow) {
+		
+		// TODO: hack
+		for (KickstartTask kickstartTask : kickstartWorkflow.getTasks()) {
+			((KickstartUserTask) kickstartTask).setAssignee("admin");
+		}
+		// TODO: hack
 		
 		// Deploying bpmn20.xml files to the workflow definition folder
 		// of the Alfresco data dictionary will automatically deploy them
@@ -219,14 +226,22 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		properties.put("bpm:engineId", "activiti");
 
 		// Upload the file
-		InputStream inputStream = new ByteArrayInputStream(marshallingService.marshallWorkflow(kickstartWorkflow).getBytes()); 
+		String workflowXML = marshallingService.marshallWorkflow(kickstartWorkflow);
+		InputStream inputStream = new ByteArrayInputStream(workflowXML.getBytes()); 
+		
+		LOGGER.info("Deploying process definition xml: " + workflowXML);
+		
 		ContentStream contentStream = new ContentStreamImpl(processName, null, "application/xml", inputStream);
 		Document document = workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
+		
+		LOGGER.info("Process definition deployed: " + document.getPaths());
 		
 		return document.getId();
 	}
 
 	private void deployTaskModel(KickstartWorkflow workflow) {
+		
+		// TODO: add to other service!
 
 	  // All task-models
 	  StringBuilder taskModelsString = new StringBuilder();
@@ -238,39 +253,54 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	    if(task instanceof KickstartUserTask) {
 	      KickstartUserTask userTask = (KickstartUserTask) task;
 	      
-	      StringBuilder typeString = new StringBuilder();
-	      StringBuilder formAppearanceString = new StringBuilder();
-	      StringBuilder formVisibilityString = new StringBuilder();
+	      if (userTask.getForm() != null) {
+	    	  
+	    	  String formId = UUID.randomUUID().toString();
+	    	  userTask.getForm().setFormKey(formId);
 	      
-	      // Get form-propertes
-	      for(KickstartFormProperty prop : userTask.getForm().getFormProperties()) {
-	        // Property in type-definition
-	        typeString.append(
-	                MessageFormat.format(TASK_MODEL_PROPERTY_XML, 
-	                        createFriendlyName(prop.getProperty()), 
-	                        getAlfrescoModelType(prop.getType()),
-	                        prop.isRequired()));
-	        
-	        // Visibility in form-config
-	        formVisibilityString.append(MessageFormat.format(TASK_FORM_CONFIG_VISIBILITY, createFriendlyName(prop.getProperty())));
-	        
-	        // Appearance on screen in form-config
-	        formAppearanceString.append(MessageFormat.format(TASK_FORM_CONFIG_APPEARANCE, 
-	                createFriendlyName(prop.getProperty()),
-	                prop.getProperty()));
-	        
+		      StringBuilder typeString = new StringBuilder();
+		      StringBuilder formAppearanceString = new StringBuilder();
+		      StringBuilder formVisibilityString = new StringBuilder();
+		      
+		      
+		      if (userTask.getForm().getFormProperties() != null && userTask.getForm().getFormProperties().size() > 0) {
+		    	  
+		    	  typeString.append("<properties>");
+		    	  
+			      // Get form-propertes
+			      for(KickstartFormProperty prop : userTask.getForm().getFormProperties()) {
+			        // Property in type-definition
+			        typeString.append(
+			                MessageFormat.format(TASK_MODEL_PROPERTY_XML, 
+			                        createFriendlyName(prop.getProperty()), 
+			                        getAlfrescoModelType(prop.getType()),
+			                        prop.isRequired()));
+			        
+			        // Visibility in form-config
+			        formVisibilityString.append(MessageFormat.format(TASK_FORM_CONFIG_VISIBILITY, createFriendlyName(prop.getProperty())));
+			        
+			        // Appearance on screen in form-config
+			        formAppearanceString.append(MessageFormat.format(TASK_FORM_CONFIG_APPEARANCE, 
+			                createFriendlyName(prop.getProperty()),
+			                prop.getProperty()));
+			        
+			      }
+			      
+			      typeString.append("</properties>");
+			      
+		      }
+		      
+		      // Add name and all form-properties to model XML
+		      taskModelsString.append(MessageFormat.format(TASK_MODEL_TASK_XML, 
+		              userTask.getForm().getFormKey(),
+		              typeString.toString()));
+		      
+		      // Add task-form-config
+		      formConfigString.append(MessageFormat.format(TASK_FORM_CONFIG_XML, 
+		    		  userTask.getForm().getFormKey(),
+		              formVisibilityString.toString(),
+		              formAppearanceString.toString()));
 	      }
-	      
-	      // Add name and all form-properties to model XML
-	      taskModelsString.append(MessageFormat.format(TASK_MODEL_TASK_XML, 
-	              userTask.getId(),
-	              typeString.toString()));
-	      
-	      // Add task-form-config
-	      formConfigString.append(MessageFormat.format(TASK_FORM_CONFIG_XML, 
-	              userTask.getId(),
-	              formVisibilityString.toString(),
-	              formAppearanceString.toString()));
 	    }
 	    
 	  }
@@ -281,51 +311,56 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	  Session session = getCmisSession();
 	  Folder modelFolder = (Folder) session.getObjectByPath(DATA_DICTIONARY_FOLDER);
 		
+	  String taskModelId = UUID.randomUUID().toString();
+	  String taskModelFileName = "task-model-" + taskModelId + ".xml";
 	  HashMap<String, Object> properties = new HashMap<String, Object>();
-	  properties.put("cmis:name", "task_model.xml");
+	  properties.put("cmis:name", taskModelFileName);
 	  properties.put("cmis:objectTypeId", "D:cm:dictionaryModel");
 	  properties.put("cm:modelActive", true);
 		
 	  // Finally, wrap all taskdefinitions is right XML -> this is the FULL model file, including generic start-task
-	  ByteArrayInputStream inputStream = new ByteArrayInputStream(
-			  MessageFormat.format(TASK_MODEL_XML, taskModelsString.toString()).getBytes());
+	  String taskModelXML = MessageFormat.format(TASK_MODEL_XML, taskModelId, taskModelsString.toString()).replace("'", "\"");
+	  LOGGER.info("Deploying task model XML: " + taskModelXML);
+	  ByteArrayInputStream inputStream = new ByteArrayInputStream(taskModelXML.getBytes());
 	  
-	  ContentStream contentStream = new ContentStreamImpl("task-model.xml", null, "application/xml", inputStream);
+	  LOGGER.info("Task model file : " + taskModelFileName);
+	  ContentStream contentStream = new ContentStreamImpl(taskModelFileName, null, "application/xml", inputStream);
 		
 	  Document document = modelFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
 	 
 	  
-	  // Upload form config
-	  
-	  HttpState state = new HttpState();
-	  state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials("admin", "admin"));
-
-	  PostMethod postMethod = new PostMethod("http://localhost:8081/share/page/modules/module");
-
-	  try {
-
-	      // Wrap all form-configs in right XL -> this is the FULL form-config file, including generic start-task definition
-          String processName = workflow.getName().replace(" ", "_"); // process-name as defined in BPMN20.xml
-		    
-		  String formConfig = MessageFormat.format(FORM_CONFIG_XML, processName, formConfigString.toString());
-		  postMethod.setRequestEntity(new StringRequestEntity(formConfig, "application/xml", "UTF-8"));
-
-		  // postMethod.setRequestHeader("Content-type", "text/xml");
-		  HttpClient httpClient = new HttpClient();
-		  int result = httpClient.executeMethod(null, postMethod, state);
-
-		  // Display status code
-		  System.out.println("Response status code: " + result);
-
-		  // Display response
-		  System.out.println("Response body: ");
-		  System.out.println(postMethod.getResponseBodyAsString());
-	  } catch (Throwable t) {
-		  System.err.println("Error: " + t.getMessage());
-		  t.printStackTrace();
-	  } finally {
-		  postMethod.releaseConnection();
-	  }
+//	  // Upload form config
+//	  
+//	  HttpState state = new HttpState();
+//	  state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials("admin", "admin"));
+//
+//	  PostMethod postMethod = new PostMethod("http://localhost:8081/share/page/modules/module");
+//
+//	  try {
+//
+//	      // Wrap all form-configs in right XL -> this is the FULL form-config file, including generic start-task definition
+//          String processName = workflow.getName().replace(" ", "_"); // process-name as defined in BPMN20.xml
+//		    
+//		  String formConfig = MessageFormat.format(FORM_CONFIG_XML, processName, formConfigString.toString());
+//		  LOGGER.info("Deploying form config XML: " + formConfig);
+//		  postMethod.setRequestEntity(new StringRequestEntity(formConfig, "application/xml", "UTF-8"));
+//
+//		  // postMethod.setRequestHeader("Content-type", "text/xml");
+//		  HttpClient httpClient = new HttpClient();
+//		  int result = httpClient.executeMethod(null, postMethod, state);
+//
+//		  // Display status code
+//		  System.out.println("Response status code: " + result);
+//
+//		  // Display response
+//		  System.out.println("Response body: ");
+//		  System.out.println(postMethod.getResponseBodyAsString());
+//	  } catch (Throwable t) {
+//		  System.err.println("Error: " + t.getMessage());
+//		  t.printStackTrace();
+//	  } finally {
+//		  postMethod.releaseConnection();
+//	  }
 	}
 
 
