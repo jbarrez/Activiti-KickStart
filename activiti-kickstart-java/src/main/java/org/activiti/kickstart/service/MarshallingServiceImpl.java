@@ -108,7 +108,7 @@ public class MarshallingServiceImpl implements MarshallingService {
 		startEvent.setInitiator("initiator");
 		
 		// TODO: For now, fixed start-task is used instead of adhoc-created one. 
-		startEvent.setFormKey("ks:genericStartTask");
+		startEvent.setFormKey("wf:submitAdhocTask"); // used to be ks:genericStartTask (joram)
 		// TODO: end of hack by frederik :-)
 		
 		process.getFlowElement().add(startEvent);
