@@ -68,24 +68,6 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	
 	private static final String TASK_MODEL_NAME = "$task_model_name$";
 	
-//	private static final String TASK_MODEL_XML =
-//			"<?xml version=''1.0'' encoding=''UTF-8''?>"
-//			+ "<model name=''ks:taskModel_{0}'' xmlns=''http://www.alfresco.org/model/dictionary/1.0''>"
-//			+ "<imports>"
-//			+ "  <import uri=''http://www.alfresco.org/model/dictionary/1.0'' prefix=''d'' />"
-//			+ "  <import uri=''http://www.alfresco.org/model/bpm/1.0'' prefix=''bpm'' />"
-//			+ "</imports>"
-//			+ "<namespaces>"
-//			+ "  <namespace uri=''http://www.alfresco.org/model/kickstart/1.0'' prefix=''ks'' />"
-//			+ "</namespaces>"
-//			+ "<types>"
-//			+ "  <type name=''ks:genericStartTask''>"
-//			+ "    <parent>bpm:startTask</parent>"
-//			+ "  </type>"
-//			+ "    {1}"
-//			+ "</types>"
-//			+ "</model>";
-	
 	private static final String TASK_MODEL_XML =
 			"<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + 
             "<model xmlns=\"http://www.alfresco.org/model/dictionary/1.0\" name=\"ks:taskModel_{0}\">" +
@@ -116,13 +98,16 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
         "<form>" +
           "<field-visibility>"+
            "{1}" +
+          "<show id=\"transitions\" />" +
           "</field-visibility>" +
           "<appearance>"+
             "<set id=\"\" appearance=\"title\" label-id=\"General\" />"+
             "<set id=\"info\" appearance=\"\" label-id=\"Info\" />"+
+            "<set id=\"response\" appearance=\"title\" label-id=\"workflow.set.response\" />" +
             // Add bpm_description as read-only 'info' field
             "<field id=\"bpm_description\" label-id=\"Description\" set=\"info\" ><control template=\"/org/alfresco/components/form/controls/info.ftl\" /></field>" +
             "{2}" +
+            "<field id=\"transitions\" set=\"response\" />" +
           "</appearance>" +
         "</form>" +
       "</forms>"+
