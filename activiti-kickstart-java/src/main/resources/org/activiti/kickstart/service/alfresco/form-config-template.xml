@@ -4,7 +4,7 @@
 	<auto-deploy>true</auto-deploy>
 	<configurations>
 		<!-- Start task form -->
-		<config evaluator="string-compare" condition="activiti$adhoc_{1}">
+		<config evaluator="string-compare" condition="activiti$kickstart_{1}">
 			<forms>
 				<form>
 					<field-visibility>

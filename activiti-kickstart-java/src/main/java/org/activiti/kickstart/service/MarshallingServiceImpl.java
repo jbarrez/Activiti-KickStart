@@ -71,7 +71,7 @@ public class MarshallingServiceImpl implements Bpmn20MarshallingService {
 	}
 	
 	/**
-	 * Generate the JAXB version of this adhoc workflow.
+	 * Generate the JAXB version of this workflow.
 	 * 
 	 * Extremely important: the flowelements are added in topological order,
 	 * from left to right and top to bottom.
@@ -79,12 +79,12 @@ public class MarshallingServiceImpl implements Bpmn20MarshallingService {
 	public Definitions convertToBpmn(KickstartWorkflow kickstartWorkflow) {
 
 		Definitions definitions = new Definitions();
-		definitions.setTargetNamespace("adhoc");
+		definitions.setTargetNamespace("kickstart");
 		String processName = kickstartWorkflow.getName().replace(" ", "_");
 
 		// Process
 		org.activiti.kickstart.bpmn20.model.Process process = new org.activiti.kickstart.bpmn20.model.Process();
-		process.setId("adhoc_" + processName);
+		process.setId("kickstart_" + processName);
 		process.setName(kickstartWorkflow.getName());
 		process.setExecutable(true);
 		Documentation processDocumentation = new Documentation();
