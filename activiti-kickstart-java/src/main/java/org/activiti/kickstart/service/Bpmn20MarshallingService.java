@@ -29,7 +29,7 @@ import org.activiti.kickstart.dto.KickstartWorkflow;
  * 
  * @author jbarrez
  */
-public interface MarshallingService {
+public interface Bpmn20MarshallingService {
 	
 	/**
 	 * Marshalls the given {@link KickstartWorkflow} to a BPMN 2.0 compatible XML.

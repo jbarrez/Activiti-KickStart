@@ -12,6 +12,7 @@ import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Post;
 
@@ -26,8 +27,12 @@ public class WorkflowResource extends BaseResource {
 		KickstartWorkflow workflow = new KickstartWorkflow();
 
 		try {
-			JsonNode json = new ObjectMapper().readTree(representation.getText());
-			LOGGER.info("Received json: " + json.toString());
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+			JsonNode json = mapper.readTree(representation.getText());
+			
+			LOGGER.info("Received json:");
+			LOGGER.info(mapper.writeValueAsString(json));
 
 			// Workflow name
 			String name = json.path("name").getTextValue();

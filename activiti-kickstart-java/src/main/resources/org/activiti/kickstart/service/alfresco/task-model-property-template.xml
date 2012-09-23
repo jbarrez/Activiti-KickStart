@@ -1,0 +1,4 @@
+<property name="{0}">
+	<type>{1}</type>
+	<mandatory>{2}</mandatory>
+</property>

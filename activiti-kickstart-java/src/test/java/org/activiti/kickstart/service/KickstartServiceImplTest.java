@@ -18,7 +18,7 @@ import org.junit.Test;
 
 public class KickstartServiceImplTest extends ActivitiTestCase {
 	
-	protected MarshallingService marshallingService = new MarshallingServiceImpl();
+	protected Bpmn20MarshallingService marshallingService = new MarshallingServiceImpl();
 
     @Test
     public void testSimpleUserTask() throws Exception {

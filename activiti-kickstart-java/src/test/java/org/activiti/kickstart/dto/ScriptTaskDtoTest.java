@@ -3,7 +3,7 @@ package org.activiti.kickstart.dto;
 import static org.junit.Assert.assertEquals;
 
 import org.activiti.kickstart.bpmn20.model.activity.type.ScriptTask;
-import org.activiti.kickstart.service.MarshallingService;
+import org.activiti.kickstart.service.Bpmn20MarshallingService;
 import org.activiti.kickstart.service.MarshallingServiceImpl;
 import org.junit.Test;
 
@@ -25,7 +25,7 @@ public class ScriptTaskDtoTest {
         dto.setResultVariableName("myVar");
         dto.setScript("#{echo}");
         
-        MarshallingService marshallingService = new MarshallingServiceImpl();
+        Bpmn20MarshallingService marshallingService = new MarshallingServiceImpl();
         ScriptTask scriptTask = marshallingService.convertToBPMN(dto);
         assertEquals("juel", scriptTask.getScriptFormat());
         assertEquals("myVar", scriptTask.getResultVariableName());

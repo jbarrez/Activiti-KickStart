@@ -6,22 +6,22 @@ import org.restlet.resource.ServerResource;
 
 public class BaseResource extends ServerResource {
 	
-	protected static KickstartService cachedKickstartService;
+	protected static KickstartService kickstartServiceInstance;
 	
 	protected KickstartService getKickstartService() {
-		if (cachedKickstartService == null) {
+		if (kickstartServiceInstance == null) {
 			synchronized (BaseResource.class) {
-				if (cachedKickstartService == null) {
+				if (kickstartServiceInstance == null) {
 					String cmisUser = getContextParameter("cmisUser");
 					String cmisPassword = getContextParameter("cmisPassword");
 					String cmisAtompubUrl = getContextParameter("cmisAtompubUrl");
 					
 					KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
-					cachedKickstartService = kickstartServiceFactory.createAlfrescoKickstartService(cmisUser, cmisPassword, cmisAtompubUrl); 
+					kickstartServiceInstance = kickstartServiceFactory.createAlfrescoKickstartService(cmisUser, cmisPassword, cmisAtompubUrl); 
 				}
 			}
 		}
-		return cachedKickstartService;
+		return kickstartServiceInstance;
 	}
 	
 	protected String getContextParameter(String parameterName) {

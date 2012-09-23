@@ -13,6 +13,7 @@
 package org.activiti.kickstart.service.alfresco;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.transform.OutputKeys;
@@ -35,8 +37,8 @@ import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
+import org.activiti.kickstart.service.Bpmn20MarshallingService;
 import org.activiti.kickstart.service.KickstartService;
-import org.activiti.kickstart.service.MarshallingService;
 import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.client.api.Folder;
 import org.apache.chemistry.opencmis.client.api.Repository;
@@ -54,121 +56,64 @@ import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.io.IOUtils;
 
 /**
  * @author Joram Barrez
  */
 public class AlfrescoKickstartServiceImpl implements KickstartService {
 	      
-	private static final Logger LOGGER = Logger.getLogger(AlfrescoKickstartServiceImpl.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AlfrescoKickstartServiceImpl.class.getName());
+    
+    // Constants /////////////////////////////////////////////////////////////////////
+    
+    private static final String KICKSTART_PREFIX = "ks:";
 	
-	private static final String WORKFLOW_DEFINITION_FOLDER = "/Data Dictionary/Workflow Definitions";
+	// Alfresco specific folders and urls //////////////////////////////////////////
+	
+    private static final String WORKFLOW_DEFINITION_FOLDER = "/Data Dictionary/Workflow Definitions";
 	
 	private static final String DATA_DICTIONARY_FOLDER = "/Data Dictionary/Models";
 	
-	private static final String TASK_MODEL_NAME = "$task_model_name$";
+	private static final String FORM_CONFIG_UPLOAD_URL = "http://localhost:8081/share/page/modules/module";
 	
-	private static final String TASK_MODEL_XML =
-			"<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + 
-            "<model xmlns=\"http://www.alfresco.org/model/dictionary/1.0\" name=\"ks:taskModel_{0}\">" +
-			"  <imports>" +
-            "    <import uri=\"http://www.alfresco.org/model/dictionary/1.0\" prefix=\"d\" />" +
-			"    <import uri=\"http://www.alfresco.org/model/bpm/1.0\" prefix=\"bpm\" />" +
-            "  </imports>" +
-			"  <namespaces>" +
-            "    <namespace uri=\"http://www.alfresco.org/model/kickstart/1.0\" prefix=\"ks\" />" +
-			"  </namespaces>" +
-            "  <types>" +
-			"    {1}" +
-            "  </types>" +
-			"</model>";
+	 // Task Model templates /////////////////////////////////////////////////////////
 	
-	private static final String TASK_MODEL_TASK_XML = "<type name=\"{0}\">" +
-      "<parent>bpm:startTask</parent>" + 
-	    "{1}" +    
-      "</type>";
+    private static final String TEMPLATE_FOLDER = "/org/activiti/kickstart/service/alfresco/";
 	
-	 private static final String TASK_MODEL_PROPERTY_XML = "<property name=\"{0}\">"+
-      "  <type>{1}</type>" +
-	  "  <mandatory>{2}</mandatory>" +
-      "</property>";
-	 
-	 private static final String TASK_FORM_CONFIG_XML = "<config evaluator=\"task-type\" condition=\"{0}\" replace=\"true\">" +
-      "<forms>" +
-        "<form>" +
-          "<field-visibility>"+
-           "{1}" +
-          "<show id=\"transitions\" />" +
-          "</field-visibility>" +
-          "<appearance>"+
-            "<set id=\"\" appearance=\"title\" label-id=\"General\" />"+
-            "<set id=\"info\" appearance=\"\" label-id=\"Info\" />"+
-            "<set id=\"response\" appearance=\"title\" label-id=\"workflow.set.response\" />" +
-            // Add bpm_description as read-only 'info' field
-            "<field id=\"bpm_description\" label-id=\"Description\" set=\"info\" ><control template=\"/org/alfresco/components/form/controls/info.ftl\" /></field>" +
-            "{2}" +
-            "<field id=\"transitions\" set=\"response\" />" +
-          "</appearance>" +
-        "</form>" +
-      "</forms>"+
-    "</config>";
-	 
-	 private static final String TASK_FORM_CONFIG_VISIBILITY = "<show id=\"{0}\" />";
-	 
-	 private static final String TASK_FORM_CONFIG_APPEARANCE = "<field id=\"{0}\" label-id=\"{1}\" set=\"info\">" + "</field>";
-	 
-	 private static final String FORM_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
-	         "<module>"+
-	         " <id>{0}</id>"+
-	         " <auto-deploy>true</auto-deploy> "+
-	         " <configurations>"+
-	         "   <!-- Start task form -->"+
-	         "    <config evaluator=\"string-compare\" condition=\"activiti$adhoc_{1}\">"+
-	         "       <forms>"+
-	         "          <form>"+
-	         "             <field-visibility>"+
-	         "                <show id=\"bpm:workflowDescription\" />"+
-	         "                <show id=\"bpm:workflowDueDate\" />"+
-	         "                <show id=\"bpm:workflowPriority\" />"+
-	         "                <show id=\"packageItems\" />"+
-	         "             </field-visibility>"+
-	         "             <appearance>"+
-	         "                <set id=\"\" appearance=\"title\" label-id=\"General info\" />"+
-	         "                <set id=\"info\" appearance=\"\" template=\"/org/alfresco/components/form/2-column-set.ftl\" />"+
-	         "                <set id=\"assignee\" appearance=\"title\" label-id=\"workflow.set.assignee\" />"+
-	         "                <set id=\"items\" appearance=\"title\" label-id=\"workflow.set.items\" />"+
-	         "                <set id=\"other\" appearance=\"title\" label-id=\"workflow.set.other\" />  "+               
-	         "                <field id=\"bpm:workflowDescription\" label-id=\"workflow.field.message\">"+
-	         "                   <control template=\"/org/alfresco/components/form/controls/textarea.ftl\">"+
-	         "                      <control-param name=\"style\">width: 95%</control-param>"+
-	         "                   </control>"+
-	         "                </field>"+
-	         "                <field id=\"bpm:workflowDueDate\" label-id=\"workflow.field.due\" set=\"info\">"+
-	         "                   <control template=\"/org/alfresco/components/form/controls/date.ftl\">"+
-	         "                    <control-param name=\"showTime\">false</control-param>"+
-	         "                    <control-param name=\"submitTime\">false</control-param>"+
-	         "                   </control>"+
-	         "                </field>"+
-	         "                <field id=\"bpm:workflowPriority\" label-id=\"workflow.field.priority\" set=\"info\">"+
-	         "                   <control template=\"/org/alfresco/components/form/controls/workflow/priority.ftl\" />"+
-	         "                </field>"+
-	         "                <field id=\"packageItems\" set=\"items\" />"+
-	         "             </appearance>"+
-	         "          </form>"+
-	         "       </forms>"+
-	         "    </config>"+
-	         "      <!-- Other task forms -->"+
-	         "      {2}"+
-	         " </configurations>"+
-	         "</module>";
+	private static final String TASK_MODEL_TEMPLATE_FILE = TEMPLATE_FOLDER + "task-model-template.xml";
+	private static String TASK_MODEL_TEMPLATE;
+	
+	private static final String TASK_MODEL_TYPE_TEMPLATE_FILE =  TEMPLATE_FOLDER + "task-model-type-template.xml";
+	private static String TASK_MODEL_TYPE_TEMPLATE;
 
+	private static final String TASK_MODEL_PROPERTY_TEMPLATE_FILE =  TEMPLATE_FOLDER + "task-model-property-template.xml";
+	private static String TASK_MODEL_PROPERTY_TEMPLATE;
+	 
+    // Form Config templates /////////////////////////////////////////////////////////
+	 
+	private static final String FORM_CONFIG_TEMPLATE_FILE =  TEMPLATE_FOLDER + "form-config-template.xml";
+	private static String FORM_CONFIG_TEMPLATE;
+	 
+	private static final String FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE_FILE =  TEMPLATE_FOLDER + "form-config-evaluator-config-template.xml";
+	private static String FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE;
+	 
+	private static final String FORM_CONFIG_FIELD_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-field-template.xml";
+	private static String FORM_CONFIG_FIELD_TEMPLATE;
+	
+	private static final String FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-field-visibility-template.xml";
+    private static String FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE;
 
-	protected String cmisUser;
+    // Service parameters /////////////////////////////////////////////////////////// 
+    
+    protected String cmisUser;
 	protected String cmisPassword;
 	protected String cmisAtompubUrl;
+	
+	// Service members /////////////////////////////////////////////////////////////
+	
 	protected Session cachedSession;
-
-	protected MarshallingService marshallingService;
+	protected Bpmn20MarshallingService marshallingService;
 	
 	public AlfrescoKickstartServiceImpl(String cmisUser, String cmisPassword, String cmisAtompubUrl) {
 		this.cmisUser = cmisUser;
@@ -186,7 +131,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 					parameters.put(SessionParameter.ATOMPUB_URL, cmisAtompubUrl);
 					parameters.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
 
-					// First need to detect the repository id
+					// First need to fetch the repository info to know the repo id
 					SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
 					List<Repository> repositories = sessionFactory.getRepositories(parameters);
 					String repositoryId = repositories.get(0).getId();
@@ -200,13 +145,13 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	}
 
 	public String deployWorkflow(KickstartWorkflow kickstartWorkflow) {
-		LOGGER.info("deploying task model");
+		LOGGER.info("Deploying task model...");
 		deployTaskModel(kickstartWorkflow); // needs to go first, as the formkey will be filled in here
 		
-		LOGGER.info("deploying process");
+		LOGGER.info("Deploying process...");
 		String processDocumentId = deployProcess(kickstartWorkflow);
 		
-		return processDocumentId; // Can't get the deployment id, so returning the document id
+		return processDocumentId; // Can't get the deployment id, so returning the cmis document id
 	}
 
 	protected String deployProcess(KickstartWorkflow kickstartWorkflow) {
@@ -218,7 +163,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		// TODO: hack
 		
 		// Deploying bpmn20.xml files to the workflow definition folder
-		// of the Alfresco data dictionary will automatically deploy them
+		// of the Alfresco Data Dictionary will automatically deploy them
 		Session cmisSession = getCmisSession();
 		Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
 		if (workflowDefinitionFolder == null) {
@@ -229,168 +174,175 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		String processName = generateBpmnResourceName(kickstartWorkflow.getName());
 		HashMap<String, Object> properties = new HashMap<String, Object>();
 		properties.put("cmis:name", processName);
-		properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition");
+		properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition"); // Important! Process won't be deployed otherwise
 		properties.put("bpm:definitionDeployed", true);
-		properties.put("bpm:engineId", "activiti");
+		properties.put("bpm:engineId", "activiti"); // Also vital for correct deployment!
 
 		// Upload the file
 		String workflowXML = marshallingService.marshallWorkflow(kickstartWorkflow);
 		InputStream inputStream = new ByteArrayInputStream(workflowXML.getBytes()); 
 		
-		LOGGER.info("Deploying process definition xml");
-		prettyPrintXml(workflowXML);
+		LOGGER.info("Deploying process definition xml...");
+		prettyLogXml(workflowXML);
 		
 		ContentStream contentStream = new ContentStreamImpl(processName, null, "application/xml", inputStream);
 		Document document = workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
 		
-		LOGGER.info("Process definition deployed: " + document.getPaths());
+		LOGGER.info("Process definition deployed to '" + document.getPaths() + "'");
 		
 		return document.getId();
 	}
 
 	private void deployTaskModel(KickstartWorkflow workflow) {
-		
-		// TODO: add to other service!
 
-	  // All task-models
-	  StringBuilder taskModelsString = new StringBuilder();
-	  
-	  // All form models
-	  StringBuilder formConfigString = new StringBuilder();
-	  
-	  for(KickstartTask task : workflow.getTasks()) {
-	    if(task instanceof KickstartUserTask) {
-	      KickstartUserTask userTask = (KickstartUserTask) task;
-	      
-	      if (userTask.getForm() != null) {
-	    	  
-	    	  String formId = "ks:" + UUID.randomUUID().toString();
-	    	  userTask.getForm().setFormKey(formId);
-	      
-		      StringBuilder typeString = new StringBuilder();
-		      StringBuilder formAppearanceString = new StringBuilder();
-		      StringBuilder formVisibilityString = new StringBuilder();
-		      
-		      
-		      if (userTask.getForm().getFormProperties() != null && userTask.getForm().getFormProperties().size() > 0) {
-		    	  
-		    	  typeString.append("<properties>");
-		    	  
-			      // Get form-propertes
-			      for(KickstartFormProperty prop : userTask.getForm().getFormProperties()) {
-			        // Property in type-definition
-			        typeString.append(
-			                MessageFormat.format(TASK_MODEL_PROPERTY_XML, 
-			                        createFriendlyName(prop.getProperty()), 
-			                        getAlfrescoModelType(prop.getType()),
-			                        prop.isRequired()));
-			        
-			        // Visibility in form-config
-			        formVisibilityString.append(MessageFormat.format(TASK_FORM_CONFIG_VISIBILITY, createFriendlyName(prop.getProperty())));
-			        
-			        // Appearance on screen in form-config
-			        formAppearanceString.append(MessageFormat.format(TASK_FORM_CONFIG_APPEARANCE, 
-			                createFriendlyName(prop.getProperty()),
-			                prop.getProperty()));
-			        
-			      }
-			      
-			      typeString.append("</properties>");
-			      
-		      }
-		      
-		      // Add name and all form-properties to model XML
-		      taskModelsString.append(MessageFormat.format(TASK_MODEL_TASK_XML, 
-		              formId,
-		              typeString.toString()));
-		      
-		      // Add task-form-config
-		      formConfigString.append(MessageFormat.format(TASK_FORM_CONFIG_XML, 
-		    		  formId,
-		              formVisibilityString.toString(),
-		              formAppearanceString.toString()));
-	      }
-	    }
-	    
-	  }
-	  
-	  
-	  // Upload task model
-		
-	  Session session = getCmisSession();
-	  Folder modelFolder = (Folder) session.getObjectByPath(DATA_DICTIONARY_FOLDER);
-		
-	  String taskModelId = UUID.randomUUID().toString();
-	  String taskModelFileName = "task-model-" + taskModelId + ".xml";
-	  HashMap<String, Object> properties = new HashMap<String, Object>();
-	  properties.put("cmis:name", taskModelFileName);
-	  properties.put("cmis:objectTypeId", "D:cm:dictionaryModel");
-	  properties.put("cm:modelActive", true);
-		
-	  // Finally, wrap all taskdefinitions is right XML -> this is the FULL model file, including generic start-task
-	  String taskModelXML = MessageFormat.format(TASK_MODEL_XML, taskModelId, taskModelsString.toString()).replace("'", "\"");
-	  LOGGER.info("Deploying task model XML:");
-	  prettyPrintXml(taskModelXML);
-	  ByteArrayInputStream inputStream = new ByteArrayInputStream(taskModelXML.getBytes());
-	  
-	  LOGGER.info("Task model file : " + taskModelFileName);
-	  ContentStream contentStream = new ContentStreamImpl(taskModelFileName, null, "application/xml", inputStream);
-		
-	  Document document = modelFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
-	 
-	  
-	  // Upload form config
-	  
-	  HttpState state = new HttpState();
-	  state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials("admin", "admin"));
+		// Following stringbuilders will construct a valid content model and form config
+		StringBuilder taskModelsString = new StringBuilder();
+		StringBuilder evaluatorConfigStringBuilder = new StringBuilder();
 
-	  PostMethod postMethod = new PostMethod("http://localhost:8081/share/page/modules/module");
+		// XML generation
+		for (KickstartTask task : workflow.getTasks()) {
+			if (task instanceof KickstartUserTask) { // Only need to generte a form for user tasks
+				generateTaskAndFormConfigForUserTask((KickstartUserTask) task, taskModelsString, evaluatorConfigStringBuilder);
+			}
+		}
 
-	  try {
-
-	      // Wrap all form-configs in right XL -> this is the FULL form-config file, including generic start-task definition
-          String processName = workflow.getName().replace(" ", "_"); // process-name as defined in BPMN20.xml
-		    
-          String formId = "kickstart_form_" + UUID.randomUUID().toString(); 
-		  String formConfig = MessageFormat.format(FORM_CONFIG_XML, formId, processName, formConfigString.toString());
-		  LOGGER.info("Deploying form config XML: ");
-		  prettyPrintXml(formConfig);
-		  postMethod.setRequestEntity(new StringRequestEntity(formConfig, "application/xml", "UTF-8"));
-
-		  // postMethod.setRequestHeader("Content-type", "text/xml");
-		  HttpClient httpClient = new HttpClient();
-		  int result = httpClient.executeMethod(null, postMethod, state);
-
-		  // Display status code
-		  System.out.println("Response status code: " + result);
-
-		  // Display response
-		  System.out.println("Response body: ");
-		  System.out.println(postMethod.getResponseBodyAsString());
-	  } catch (Throwable t) {
-		  System.err.println("Error: " + t.getMessage());
-		  t.printStackTrace();
-	  } finally {
-		  postMethod.releaseConnection();
-	  }
+		// Upload results to Alfresco
+		uploadTaskModel(taskModelsString);
+		uploadFormConfig(evaluatorConfigStringBuilder, workflow);
 	}
 
+	protected void generateTaskAndFormConfigForUserTask(KickstartUserTask userTask,
+			StringBuilder taskModelsString, StringBuilder formConfigString) {
 
-	private Object getAlfrescoModelType(String type) {
-	  
-	  if(type.equals("text")) {
-	    return "d:text";
-	  } else if(type.equals("date")) {
-	    return "d:date";
-  	} else if(type.equals("number")) {
-  	  return "d:long";
-  	}
-    return null;
-  }
+		if (userTask.getForm() != null) {
 
-  private Object createFriendlyName(String property) {
-    return "ks:" + property.toLowerCase().replace(" ", "_");
-  }
+			String formId = KICKSTART_PREFIX + UUID.randomUUID().toString();
+			userTask.getForm().setFormKey(formId);
+
+			StringBuilder typeString = new StringBuilder();
+			StringBuilder formAppearanceString = new StringBuilder();
+			StringBuilder formVisibilityString = new StringBuilder();
+
+			if (userTask.getForm().getFormProperties() != null
+					&& userTask.getForm().getFormProperties().size() > 0) {
+
+				typeString.append("<properties>");
+
+				// Get form-propertes
+				for (KickstartFormProperty formProperty : userTask.getForm().getFormProperties()) {
+					// Property in type-definition
+					typeString.append(MessageFormat.format(
+							getTaskModelPropertyTemplate(),
+							createFriendlyName(formProperty.getProperty()),
+							getAlfrescoModelType(formProperty.getType()),
+							formProperty.isRequired()));
+
+					// Visibility in form-config
+					formVisibilityString.append(MessageFormat.format(
+							getFormConfigFieldVisibilityTemplate(),
+							createFriendlyName(formProperty.getProperty())));
+
+					// Appearance on screen in form-config
+					formAppearanceString.append(MessageFormat.format(
+							getFormConfigFieldTemplate(),
+							createFriendlyName(formProperty.getProperty()),
+							formProperty.getProperty()));
+
+				}
+				typeString.append("</properties>");
+			}
+
+			// Add name and all form-properties to model XML
+			taskModelsString.append(MessageFormat.format(
+					getTaskModelTypeTemplate(), formId,
+					typeString.toString()));
+
+			// Add task-form-config
+			formConfigString.append(MessageFormat.format(
+					getFormConfigEvaluatorConfigTemplate(), formId,
+					formVisibilityString.toString(),
+					formAppearanceString.toString()));
+		}
+	}
+	
+	protected void uploadTaskModel(StringBuilder taskModelsString) {
+		Session session = getCmisSession();
+		Folder modelFolder = (Folder) session.getObjectByPath(DATA_DICTIONARY_FOLDER);
+
+		String taskModelId = UUID.randomUUID().toString();
+		String taskModelFileName = "task-model-" + taskModelId + ".xml";
+		HashMap<String, Object> properties = new HashMap<String, Object>();
+		properties.put("cmis:name", taskModelFileName);
+		properties.put("cmis:objectTypeId", "D:cm:dictionaryModel");
+		properties.put("cm:modelActive", true);
+
+		// Finally, wrap all taskdefinitions is right XML -> this is the FULL
+		// model file, including generic start-task
+		String taskModelXML = MessageFormat.format(getTaskModelTemplate(),
+				taskModelId, taskModelsString.toString());
+		LOGGER.info("Deploying task model XML:");
+		prettyLogXml(taskModelXML);
+		ByteArrayInputStream inputStream = new ByteArrayInputStream(taskModelXML.getBytes());
+
+		LOGGER.info("Task model file : " + taskModelFileName);
+		ContentStream contentStream = new ContentStreamImpl(taskModelFileName, null, "application/xml", inputStream);
+
+		modelFolder.createDocument(properties,contentStream, VersioningState.MAJOR);
+	}
+	
+	protected void uploadFormConfig(StringBuilder evaluatorConfigStringBuilder, KickstartWorkflow workflow) {
+		HttpState state = new HttpState();
+		state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), 
+				new UsernamePasswordCredentials(cmisUser, cmisPassword));
+
+		PostMethod postMethod = new PostMethod(FORM_CONFIG_UPLOAD_URL);
+
+		try {
+
+			// Wrap all form-configs in right XML -> this is the FULL form-config
+			// file, including generic start-task definition
+			String formId = "kickstart_form_" + UUID.randomUUID().toString();
+			String formConfig = MessageFormat.format(getFormConfigTemplate(),
+					formId, 
+					workflow.getName().replace(" ", "_"), 
+					evaluatorConfigStringBuilder.toString());
+			
+			LOGGER.info("Deploying form config XML: ");
+			prettyLogXml(formConfig);
+			
+			postMethod.setRequestEntity(new StringRequestEntity(formConfig, "application/xml", "UTF-8"));
+
+			HttpClient httpClient = new HttpClient();
+			int result = httpClient.executeMethod(null, postMethod, state);
+
+			// Display status code
+			System.out.println("Response status code: " + result);
+
+			// Display response
+			System.out.println("Response body: ");
+			System.out.println(postMethod.getResponseBodyAsString());
+		} catch (Throwable t) {
+			System.err.println("Error: " + t.getMessage());
+			t.printStackTrace();
+		} finally {
+			postMethod.releaseConnection();
+		}
+	}
+
+	protected Object getAlfrescoModelType(String type) {
+		if (type.equals("text")) {
+			return "d:text";
+		} else if (type.equals("date")) {
+			return "d:date";
+		} else if (type.equals("number")) {
+			return "d:long";
+		}
+		return null;
+	}
+
+	protected Object createFriendlyName(String property) {
+		return "ks:" + property.toLowerCase().replace(" ", "_");
+	}
 
 	public List<KickstartWorkflowInfo> findWorkflowInformation() {
 		throw new UnsupportedOperationException();
@@ -402,8 +354,8 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 	public InputStream getProcessImage(String processDefinitionId) {
 		throw new UnsupportedOperationException();
-	}
-
+	}	
+	
 	public InputStream getBpmnXml(String processDefinitionId) {
 		throw new UnsupportedOperationException();
 	}
@@ -441,15 +393,82 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		this.cmisAtompubUrl = cmisAtompubUrl;
 	}
 
-	public MarshallingService getMarshallingService() {
+	public Bpmn20MarshallingService getMarshallingService() {
 		return marshallingService;
 	}
 
-	public void setMarshallingService(MarshallingService marshallingService) {
+	public void setMarshallingService(Bpmn20MarshallingService marshallingService) {
 		this.marshallingService = marshallingService;
 	}
 	
-	private void prettyPrintXml(String xml) {
+	// Helper methods /////////////////////////////////////////////////////////////////
+	
+	protected String getTaskModelTemplate(){
+		if (TASK_MODEL_TEMPLATE == null) {
+			TASK_MODEL_TEMPLATE = readTemplateFile(TASK_MODEL_TEMPLATE_FILE);
+		}
+		return TASK_MODEL_TEMPLATE;
+	}
+	
+	protected String getTaskModelTypeTemplate() {
+		if (TASK_MODEL_TYPE_TEMPLATE == null)
+		{
+			TASK_MODEL_TYPE_TEMPLATE = readTemplateFile(TASK_MODEL_TYPE_TEMPLATE_FILE);
+		}
+		return TASK_MODEL_TYPE_TEMPLATE;
+	}
+	
+	protected String getTaskModelPropertyTemplate() {
+		if (TASK_MODEL_PROPERTY_TEMPLATE == null) {
+			TASK_MODEL_PROPERTY_TEMPLATE = readTemplateFile(TASK_MODEL_PROPERTY_TEMPLATE_FILE);
+		}
+		return TASK_MODEL_PROPERTY_TEMPLATE;
+	}
+	
+	protected String getFormConfigTemplate() {
+		if (FORM_CONFIG_TEMPLATE == null) {
+			FORM_CONFIG_TEMPLATE = readTemplateFile(FORM_CONFIG_TEMPLATE_FILE);
+		}
+		return FORM_CONFIG_TEMPLATE;
+	}
+	
+	protected String getFormConfigEvaluatorConfigTemplate() {
+		if (FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE == null) {
+			FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE = readTemplateFile(FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE_FILE);
+		}
+		return FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE;
+	}
+	
+	protected String getFormConfigFieldTemplate() {
+		if (FORM_CONFIG_FIELD_TEMPLATE == null) {
+			FORM_CONFIG_FIELD_TEMPLATE = readTemplateFile(FORM_CONFIG_FIELD_TEMPLATE_FILE);
+		}
+		return FORM_CONFIG_FIELD_TEMPLATE;
+	}
+	
+	protected String getFormConfigFieldVisibilityTemplate() {
+		if (FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE == null) {
+			FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE = readTemplateFile(FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE_FILE);
+		}
+		return FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE;
+	}
+	
+	protected String readTemplateFile(String templateFile) {
+		LOGGER.info("Reading template file '" + templateFile + "'");
+		InputStream inputStream = AlfrescoKickstartServiceImpl.class.getResourceAsStream(templateFile);
+		if (inputStream == null) {
+			LOGGER.warning("Could not read template file '" + templateFile + "'!");
+		} else {
+			try {
+				return IOUtils.toString(inputStream);
+			} catch (IOException e) {
+				LOGGER.log(Level.SEVERE, "Error while reading '" + templateFile + "' : " + e.getMessage());
+			}
+		}
+		return null;
+	}
+	
+	protected void prettyLogXml(String xml) {
 		try {
 			Transformer transformer = TransformerFactory.newInstance().newTransformer(); 
 			transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");

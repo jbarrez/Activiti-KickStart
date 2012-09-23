@@ -36,7 +36,7 @@ public class KickstartServiceImpl implements KickstartService {
 
 	protected RepositoryService repositoryService;
 	protected TransformationService transformationService;
-	protected MarshallingService marshallingService;
+	protected Bpmn20MarshallingService marshallingService;
 	
 	// Kickstart operations //////////////////////////////////////////////////////////////
 
@@ -138,11 +138,11 @@ public class KickstartServiceImpl implements KickstartService {
 		this.transformationService = transformationService;
 	}
 	
-	public MarshallingService getMarshallingService() {
+	public Bpmn20MarshallingService getMarshallingService() {
 		return marshallingService;
 	}
 	
-	public void setMarshallingService(MarshallingService marshallingService) {
+	public void setMarshallingService(Bpmn20MarshallingService marshallingService) {
 		this.marshallingService = marshallingService;
 	}
 

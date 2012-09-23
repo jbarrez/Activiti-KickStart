@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://www.alfresco.org/model/dictionary/1.0" name="ks:taskModel_{0}">
+	<imports>
+		<import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d" />
+		<import uri="http://www.alfresco.org/model/bpm/1.0" prefix="bpm" />
+	</imports>
+	<namespaces>
+		<namespace uri="http://www.alfresco.org/model/kickstart/1.0" prefix="ks" />
+	</namespaces>
+	<types>
+		{1}
+	</types>
+</model>

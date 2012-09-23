@@ -19,7 +19,7 @@ import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 
 /**
- * This is the service you'll typically use if you want to integrate the Activiti Kickstart functionality. 
+ * This is the service you'll use if you want to integrate the Activiti Kickstart functionality. 
  * 
  * @author Joram Barrez
  */

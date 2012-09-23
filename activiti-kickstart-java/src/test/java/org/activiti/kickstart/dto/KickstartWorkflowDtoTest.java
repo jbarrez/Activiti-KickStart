@@ -11,7 +11,7 @@ import org.activiti.kickstart.bpmn20.model.activity.type.ServiceTask;
 import org.activiti.kickstart.bpmn20.model.activity.type.UserTask;
 import org.activiti.kickstart.bpmn20.model.bpmndi.BPMNPlane;
 import org.activiti.kickstart.bpmn20.model.extension.activiti.ActivitFieldExtensionElement;
-import org.activiti.kickstart.service.MarshallingService;
+import org.activiti.kickstart.service.Bpmn20MarshallingService;
 import org.activiti.kickstart.service.MarshallingServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +19,7 @@ import org.junit.Test;
 
 public class KickstartWorkflowDtoTest {
 	
-	protected MarshallingService marshallingService;
+	protected Bpmn20MarshallingService marshallingService;
 	
 	@Before
 	public void setup() {

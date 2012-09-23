@@ -1,0 +1,4 @@
+<type name="{0}">
+	<parent>bpm:startTask</parent>
+	{1}
+</type>

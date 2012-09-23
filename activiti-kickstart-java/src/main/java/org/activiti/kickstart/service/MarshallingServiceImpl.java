@@ -56,7 +56,7 @@ import org.activiti.kickstart.util.ExpressionUtil;
  * 
  * @author jbarrez
  */
-public class MarshallingServiceImpl implements MarshallingService {
+public class MarshallingServiceImpl implements Bpmn20MarshallingService {
 	
 	public String marshallWorkflow(KickstartWorkflow kickstartWorkflow) {
 		try {

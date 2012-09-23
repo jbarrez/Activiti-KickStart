@@ -40,7 +40,7 @@ import org.activiti.kickstart.bpmn20.model.event.StartEvent;
 import org.activiti.kickstart.bpmn20.model.gateway.ParallelGateway;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartTaskBlock;
-import org.activiti.kickstart.service.MarshallingService;
+import org.activiti.kickstart.service.Bpmn20MarshallingService;
 
 /**
  * @author Joram Barrez
@@ -67,7 +67,7 @@ public class ProcessDiagramGenerator {
   protected int TASK_BLOCK_WIDTH = GATEWAY_WIDTH + TASK_WIDTH + SEQUENCE_FLOW_WIDTH + LONG_SEQUENCE_FLOW_WITHOUT_ARROW_WIDTH;
 
   // Instance members
-  protected MarshallingService marshallingService;
+  protected Bpmn20MarshallingService marshallingService;
   protected KickstartWorkflow kickstartWorkflow;
 
   // Will be set during image generation
@@ -80,16 +80,16 @@ public class ProcessDiagramGenerator {
   protected Map<String, List<SequenceFlow>> incomingSequenceFlowMapping;
   protected Set<String> handledElements;
 
-  public ProcessDiagramGenerator(KickstartWorkflow kickstartWorkflow, MarshallingService marshallingService) {
+  public ProcessDiagramGenerator(KickstartWorkflow kickstartWorkflow, Bpmn20MarshallingService marshallingService) {
     this.kickstartWorkflow = kickstartWorkflow;
     this.marshallingService = marshallingService;
   }
 
-  public MarshallingService getMarshallingService() {
+  public Bpmn20MarshallingService getMarshallingService() {
 	return marshallingService;
   }
 
-	public void setMarshallingService(MarshallingService marshallingService) {
+	public void setMarshallingService(Bpmn20MarshallingService marshallingService) {
 		this.marshallingService = marshallingService;
 	}
 
