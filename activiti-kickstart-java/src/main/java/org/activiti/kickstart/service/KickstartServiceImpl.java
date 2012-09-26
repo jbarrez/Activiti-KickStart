@@ -14,6 +14,7 @@ package org.activiti.kickstart.service;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -41,7 +42,7 @@ public class KickstartServiceImpl implements KickstartService {
 	// Kickstart operations //////////////////////////////////////////////////////////////
 
 
-	public String deployWorkflow(KickstartWorkflow kickstartWorkflow) {
+	public String deployWorkflow(KickstartWorkflow kickstartWorkflow, Map<String, String> metadata) {
 		String deploymentName = "Process " + kickstartWorkflow.getName();
 		String bpmn20XmlResourceName = generateBpmnResourceName(kickstartWorkflow.getName());
 		DeploymentBuilder deploymentBuilder = repositoryService.createDeployment().name(deploymentName);
@@ -99,7 +100,11 @@ public class KickstartServiceImpl implements KickstartService {
 		return repositoryService.getResourceAsStream(
 				processDefinition.getDeploymentId(),
 				processDefinition.getDiagramResourceName());
-	};
+	}
+	
+	public void setProcessImage(String processDefinitionId, InputStream processImageStream) {
+	  throw new UnsupportedOperationException();
+	}
 
 	public InputStream getBpmnXml(String processDefinitionId) {
 		ProcessDefinition processDefinition = repositoryService

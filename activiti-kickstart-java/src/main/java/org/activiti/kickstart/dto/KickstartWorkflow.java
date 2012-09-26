@@ -26,6 +26,7 @@ public class KickstartWorkflow {
   public static final String START_NAME = "theStart";
   public static final String END_NAME = "theEnd";
 
+  protected String id; // non-null when process is deployed
   protected String name;
   protected String description;
   protected List<KickstartTask> tasks = new ArrayList<KickstartTask>();
@@ -43,6 +44,14 @@ public class KickstartWorkflow {
   
   public void setCachedDefinitions(Definitions definitions) {
 	  this.cachedDefinitions = definitions;
+  }
+  
+  public String getId() {
+    return id;
+  }
+  
+  public void setId(String id) {
+    this.id = id;
   }
 
   public String getName() {

@@ -1,6 +1,7 @@
 package org.activiti.kickstart;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -10,91 +11,98 @@ import org.activiti.kickstart.dto.KickstartFormProperty;
 import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.service.MetaDataKeys;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.codehaus.jackson.node.ObjectNode;
 import org.restlet.representation.Representation;
 import org.restlet.resource.Post;
 
 public class WorkflowResource extends BaseResource {
 
-	private static final Logger LOGGER = Logger.getLogger(WorkflowResource.class.getName());
-	
-	@Post
-	public String deployWorkflow(Representation representation) {
+  private static final Logger LOGGER = Logger.getLogger(WorkflowResource.class.getName());
 
-		// Convert body to internal workflow object
-		KickstartWorkflow workflow = new KickstartWorkflow();
+  @Post
+  public ObjectNode deployWorkflow(Representation representation) {
 
-		try {
-			ObjectMapper mapper = new ObjectMapper();
-			mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-			JsonNode json = mapper.readTree(representation.getText());
-			
-			LOGGER.info("Received json:");
-			LOGGER.info(mapper.writeValueAsString(json));
+    // Convert body to internal workflow object
+    KickstartWorkflow workflow = new KickstartWorkflow();
 
-			// Workflow name
-			String name = json.path("name").getTextValue();
-			if (name == null) {
-				throw new RuntimeException("Missing parameter [name] in json body");
-			}
-			workflow.setName(name);
+    try {
+      ObjectMapper mapper = new ObjectMapper();
+      mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+      String jsonText = representation.getText();
+      JsonNode json = mapper.readTree(jsonText);
 
-			// Workflow description
-			String description = json.path("description").getTextValue();
-			workflow.setDescription(description);
+      LOGGER.info("Received json:");
+      LOGGER.info(mapper.writeValueAsString(json));
 
-			// Workflow tasks
-			JsonNode taskArray = json.path("tasks");
-			if (taskArray != null && taskArray.isArray()) {
+      // Workflow name
+      String name = json.path("name").getTextValue();
+      if (name == null) {
+        throw new RuntimeException("Missing parameter [name] in json body");
+      }
+      workflow.setName(name);
 
-				List<KickstartTask> workflowTasks = new ArrayList<KickstartTask>();
-				workflow.setTasks(workflowTasks);
+      // Workflow description
+      String description = json.path("description").getTextValue();
+      workflow.setDescription(description);
 
-				Iterator<JsonNode> taskIterator = taskArray.iterator();
-				while (taskIterator.hasNext()) {
+      // Workflow tasks
+      JsonNode taskArray = json.path("tasks");
+      if (taskArray != null && taskArray.isArray()) {
 
-					JsonNode taskNode = taskIterator.next();
-					
-					KickstartUserTask workflowTask = new KickstartUserTask();
-					workflowTasks.add(workflowTask);
-					
-					// Task details
-					workflowTask.setName(taskNode.path("name").getTextValue());
-					workflowTask.setDescription(taskNode.path("description").getTextValue());
-					workflowTask.setStartWithPrevious(taskNode.path("startWithPrevious").getBooleanValue());
-					
-					// Task form
-					JsonNode formArray = taskNode.path("form");
-					if (formArray != null && formArray.isArray()) {
-						
-						KickstartForm kickstartForm = new KickstartForm();
-						workflowTask.setForm(kickstartForm);
-						
-						Iterator<JsonNode> formIterator = formArray.iterator();
-						while (formIterator.hasNext()) {
-							KickstartFormProperty formProperty = new KickstartFormProperty();
-							kickstartForm.addFormProperty(formProperty);
-							
-							JsonNode formEntry = formIterator.next();
-							formProperty.setProperty(formEntry.path("name").getTextValue());
-							formProperty.setType(formEntry.path("type").getTextValue());
-							formProperty.setRequired(formEntry.path("isRequired").getTextValue().equals("true"));
-						}
-						
-					}
-				}
-			}
-			
-			// Actually deploy this workflow
-			return getKickstartService().deployWorkflow(workflow);
+        List<KickstartTask> workflowTasks = new ArrayList<KickstartTask>();
+        workflow.setTasks(workflowTasks);
 
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException("Could not deploy workflow: " + e.getMessage());
-		}
+        Iterator<JsonNode> taskIterator = taskArray.iterator();
+        while (taskIterator.hasNext()) {
 
-	}
+          JsonNode taskNode = taskIterator.next();
+
+          KickstartUserTask workflowTask = new KickstartUserTask();
+          workflowTasks.add(workflowTask);
+
+          // Task details
+          workflowTask.setName(taskNode.path("name").getTextValue());
+          workflowTask.setDescription(taskNode.path("description").getTextValue());
+          workflowTask.setStartWithPrevious(taskNode.path("startWithPrevious").getBooleanValue());
+
+          // Task form
+          JsonNode formArray = taskNode.path("form");
+          if (formArray != null && formArray.isArray()) {
+
+            KickstartForm kickstartForm = new KickstartForm();
+            workflowTask.setForm(kickstartForm);
+
+            Iterator<JsonNode> formIterator = formArray.iterator();
+            while (formIterator.hasNext()) {
+              KickstartFormProperty formProperty = new KickstartFormProperty();
+              kickstartForm.addFormProperty(formProperty);
+
+              JsonNode formEntry = formIterator.next();
+              formProperty.setProperty(formEntry.path("name").getTextValue());
+              formProperty.setType(formEntry.path("type").getTextValue());
+              formProperty.setRequired(formEntry.path("isRequired").getTextValue().equals("true"));
+            }
+
+          }
+        }
+      }
+
+      // Actually deploy this workflow
+      String workflowId = getKickstartService().deployWorkflow(workflow, 
+              Collections.singletonMap(MetaDataKeys.WORKFLOW_JSON_SOURCE, jsonText));
+      ObjectNode idNode = new ObjectMapper().createObjectNode();
+      idNode.put("id", workflowId);
+      return idNode;
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      throw new RuntimeException("Could not deploy workflow: " + e.getMessage());
+    }
+
+  }
 
 }

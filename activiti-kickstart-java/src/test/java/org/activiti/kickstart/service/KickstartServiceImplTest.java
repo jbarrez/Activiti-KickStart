@@ -276,7 +276,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         System.out.println(bpmn);
 
 
-        String deploymentId = service.deployWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto, null);
         String pid = getDeployedProcessDefinitionId(deploymentId);
         KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
@@ -297,7 +297,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
         KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
 
-        String deploymentId = service.deployWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto, null);
         String pid = getDeployedProcessDefinitionId(deploymentId);
         KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
@@ -319,7 +319,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
         KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
 
-        String deploymentId = service.deployWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto, null);
         String pid = getDeployedProcessDefinitionId(deploymentId);
         KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
@@ -381,7 +381,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
         KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
 
-        String deploymentId = service.deployWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto, null);
         String pid = getDeployedProcessDefinitionId(deploymentId);
         KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 
@@ -515,7 +515,7 @@ public class KickstartServiceImplTest extends ActivitiTestCase {
         KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
         KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
 
-        String deploymentId = service.deployWorkflow(dto);
+        String deploymentId = service.deployWorkflow(dto, null);
         String pid = getDeployedProcessDefinitionId(deploymentId);
         KickstartWorkflow deployedDto = service.findWorkflowById(pid);
 

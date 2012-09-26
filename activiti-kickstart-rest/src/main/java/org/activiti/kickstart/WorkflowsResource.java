@@ -13,24 +13,19 @@
 
 package org.activiti.kickstart;
 
-import org.restlet.Application;
-import org.restlet.Restlet;
-import org.restlet.routing.Router;
+import java.util.List;
+
+import org.activiti.kickstart.dto.KickstartWorkflowInfo;
+import org.restlet.resource.Get;
 
 /**
  * @author jbarrez
  */
-public class KickstartApplication extends Application {
+public class WorkflowsResource extends BaseResource {
   
-  @Override
-  public synchronized Restlet createInboundRoot() {
-    Router router = new Router(getContext());
-
-    router.attach("/workflow", WorkflowResource.class);
-    router.attach("/workflow/{workflowId}/image", WorkflowImageResource.class);
-    router.attach("/workflows", WorkflowsResource.class);
-    
-    return router;
+  @Get
+  public List<KickstartWorkflowInfo> getWorkflowList() {
+    return getKickstartService().findWorkflowInformation();
   }
-  
+
 }

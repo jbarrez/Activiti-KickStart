@@ -18,6 +18,8 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
 import org.activiti.kickstart.dto.KickstartFormProperty;
 import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartUserTask;
@@ -39,12 +42,16 @@ import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 import org.activiti.kickstart.service.Bpmn20MarshallingService;
 import org.activiti.kickstart.service.KickstartService;
+import org.activiti.kickstart.service.MetaDataKeys;
 import org.apache.chemistry.opencmis.client.api.Document;
 import org.apache.chemistry.opencmis.client.api.Folder;
+import org.apache.chemistry.opencmis.client.api.ItemIterable;
+import org.apache.chemistry.opencmis.client.api.QueryResult;
 import org.apache.chemistry.opencmis.client.api.Repository;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.api.SessionFactory;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
+import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
@@ -144,17 +151,18 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		return cachedSession;
 	}
 
-	public String deployWorkflow(KickstartWorkflow kickstartWorkflow) {
-		LOGGER.info("Deploying task model...");
+	public String deployWorkflow(KickstartWorkflow kickstartWorkflow, Map<String, String> metadata) {
+	  
+	  String jsonSource = metadata.get(MetaDataKeys.WORKFLOW_JSON_SOURCE);
+	  if (jsonSource == null) {
+	    throw new RuntimeException("Missing metadata " + MetaDataKeys.WORKFLOW_JSON_SOURCE);
+	  }
+	  
 		deployTaskModel(kickstartWorkflow); // needs to go first, as the formkey will be filled in here
-		
-		LOGGER.info("Deploying process...");
-		String processDocumentId = deployProcess(kickstartWorkflow);
-		
-		return processDocumentId; // Can't get the deployment id, so returning the cmis document id
+		return deployProcess(kickstartWorkflow, jsonSource); // Can't get the deployment id, so returning process definition id
 	}
 
-	protected String deployProcess(KickstartWorkflow kickstartWorkflow) {
+	protected String deployProcess(KickstartWorkflow kickstartWorkflow, String jsonSource) {
 		
 		// TODO: hack (until we get real users in there)
 		for (KickstartTask kickstartTask : kickstartWorkflow.getTasks()) {
@@ -162,16 +170,44 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		}
 		// TODO: hack
 		
-		// Deploying bpmn20.xml files to the workflow definition folder
-		// of the Alfresco Data Dictionary will automatically deploy them
+		// Process name needs to follow certain rules
+		String processName = generateBpmnResourceName(kickstartWorkflow.getName());
+		String baseName = processNameToBaseName(processName);
+		
+		// Process image (must go first, since it will add DI to the process xml)
+		LOGGER.info("Generating process image...");
+		ProcessDiagramGenerator diagramGenerator = new ProcessDiagramGenerator(kickstartWorkflow, marshallingService);
+		InputStream diagramInputStream = diagramGenerator.execute();
+		
+		// Diagram is deployed next to the process xml
 		Session cmisSession = getCmisSession();
 		Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
 		if (workflowDefinitionFolder == null) {
 			throw new RuntimeException("Cannot find workflow definition folder '" + WORKFLOW_DEFINITION_FOLDER + "'");
 		}
+		
+		HashMap<String, Object> diagramProperties = new HashMap<String, Object>();
+		String diagramFileName = baseName + ".png";
+		diagramProperties.put(PropertyIds.NAME, diagramFileName);
+		diagramProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+		
+		ContentStream diagramContentStream = new ContentStreamImpl(diagramFileName, null, "image/png", diagramInputStream);
+		workflowDefinitionFolder.createDocument(diagramProperties, diagramContentStream, VersioningState.MAJOR);
+		
+		// Upload json source of workflow
+		LOGGER.info("Upload json source...");
+		HashMap<String, Object> jsonSrcProperties = new HashMap<String, Object>();
+		String jsonSrcFileName = baseName + ".json"; 
+		jsonSrcProperties.put(PropertyIds.NAME, jsonSrcFileName);
+		jsonSrcProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+		
+    ContentStream jsonSrcContentStream = new ContentStreamImpl(jsonSrcFileName, null, "application/json", new ByteArrayInputStream(jsonSource.getBytes()));
+    workflowDefinitionFolder.createDocument(jsonSrcProperties, jsonSrcContentStream, VersioningState.MAJOR);
+		
+		// Deploying bpmn20.xml files to the workflow definition folder
+		// of the Alfresco Data Dictionary will automatically deploy them
 
 		// Create cmis document version of the workflow
-		String processName = generateBpmnResourceName(kickstartWorkflow.getName());
 		HashMap<String, Object> properties = new HashMap<String, Object>();
 		properties.put("cmis:name", processName);
 		properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition"); // Important! Process won't be deployed otherwise
@@ -182,15 +218,18 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		String workflowXML = marshallingService.marshallWorkflow(kickstartWorkflow);
 		InputStream inputStream = new ByteArrayInputStream(workflowXML.getBytes()); 
 		
-		LOGGER.info("Deploying process definition xml...");
+		LOGGER.info("Uploading process definition xml...");
 		prettyLogXml(workflowXML);
 		
 		ContentStream contentStream = new ContentStreamImpl(processName, null, "application/xml", inputStream);
 		Document document = workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
 		
-		LOGGER.info("Process definition deployed to '" + document.getPaths() + "'");
-		
-		return document.getId();
+		LOGGER.info("Process definition uploaded to '" + document.getPaths() + "'");
+		return baseName;
+	}
+	
+	protected String processNameToBaseName(String processName) {
+	  return processName.replace(".bpmn20.xml", "");
 	}
 
 	private void deployTaskModel(KickstartWorkflow workflow) {
@@ -345,7 +384,29 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	}
 
 	public List<KickstartWorkflowInfo> findWorkflowInformation() {
-		throw new UnsupportedOperationException();
+		// Fetch all BPMN 2.0 xml processes from the definitions folder
+	  Session cmisSession = getCmisSession();
+    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
+    String query = "select " + PropertyIds.OBJECT_ID + "," + PropertyIds.NAME + "," + PropertyIds.CREATION_DATE +
+            " from cmis:document where in_folder('" + workflowDefinitionFolder.getId() +
+            "') and cmis:name LIKE '%.bpmn20.xml' order by cmis:name";
+    LOGGER.info("Executing CMIS query '" + query + "'");
+    ItemIterable<QueryResult> results = cmisSession.query(query , false);
+	  
+	  // Transmorph them into the correct KickstartWorkflowInfo object
+    ArrayList<KickstartWorkflowInfo> workflowInfos = new ArrayList<KickstartWorkflowInfo>();
+    for (QueryResult result : results) {
+      // We're using only a fraction of the KickstartWorkflowInfo objects
+      KickstartWorkflowInfo kickstartWorkflowInfo = new KickstartWorkflowInfo();
+      String name = result.getPropertyValueById(PropertyIds.NAME);
+      kickstartWorkflowInfo.setName(name);
+      kickstartWorkflowInfo.setId(processNameToBaseName(name));  
+      GregorianCalendar createDate = result.getPropertyValueById(PropertyIds.CREATION_DATE); 
+      kickstartWorkflowInfo.setCreateTime(createDate.getTime()) ;
+      workflowInfos.add(kickstartWorkflowInfo);
+    }
+    
+    return workflowInfos;
 	}
 
 	public KickstartWorkflow findWorkflowById(String id) {
@@ -353,8 +414,29 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	}
 
 	public InputStream getProcessImage(String processDefinitionId) {
-		throw new UnsupportedOperationException();
+	  Session cmisSession = getCmisSession();
+    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
+    
+    Document imageDocument = (Document) cmisSession.getObjectByPath(workflowDefinitionFolder.getPath() + "/" + processDefinitionIdToProcessImage(processDefinitionId));
+    return imageDocument.getContentStream().getStream();
 	}	
+	
+	public void setProcessImage(String processDefinitionId, InputStream processImageStream) {
+	  Session cmisSession = getCmisSession();
+    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
+    
+    HashMap<String, Object> properties = new HashMap<String, Object>();
+    String fileName = processDefinitionIdToProcessImage(processDefinitionId); 
+    properties.put("cmis:name", fileName);
+    properties.put("cmis:objectTypeId", "cmis:document");
+    
+    ContentStream contentStream = new ContentStreamImpl(fileName, null, "image/png", processImageStream);
+    workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
+	}
+	
+	protected String processDefinitionIdToProcessImage(String processDefinitionId) {
+	  return processDefinitionId + "_image.png";
+	}
 	
 	public InputStream getBpmnXml(String processDefinitionId) {
 		throw new UnsupportedOperationException();

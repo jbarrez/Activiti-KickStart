@@ -64,7 +64,7 @@ public class KickstartTest extends ActivitiTestCase {
 
         KickstartServiceFactory kickstartServiceFactory = new KickstartServiceFactory();
         KickstartService service = kickstartServiceFactory.createActivitiStandaloneKickStartService();
-        service.deployWorkflow(wf);
+        service.deployWorkflow(wf, null);
 
         List<ProcessDefinition> definitions = processEngine.getRepositoryService()
             .createProcessDefinitionQuery()

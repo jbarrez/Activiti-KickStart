@@ -14,6 +14,7 @@ package org.activiti.kickstart.service;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
@@ -27,8 +28,10 @@ public interface KickstartService {
 
 	/**
 	 * Deploys the given workflow representation to the configured Activiti engine.
+	 * 
+	 * Metadata is an optional map, for those services that would like to pass stuff.
 	 */
-	String deployWorkflow(KickstartWorkflow kickstartWorkflowDto);
+	String deployWorkflow(KickstartWorkflow kickstartWorkflowDto, Map<String, String> metadata);
 
 	/**
 	 * Retrieves a list of {@link KickstartWorkflowInfo} instances which
@@ -48,6 +51,11 @@ public interface KickstartService {
 	 * with the given id (convenience method - this is already possible with Activiti)
 	 */
 	InputStream getProcessImage(String processDefinitionId);
+	
+	/**
+	 * Allows to change the process image of the given process definition.
+	 */
+	void setProcessImage(String processDefinitionId, InputStream processImageStream);;
 
 	/**
 	 * Returns an {@link InputStream} to the BPMN 2.0 xml for the process definition
