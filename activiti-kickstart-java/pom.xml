@@ -58,10 +58,15 @@
 		</dependency>
 		<!-- CMIS -->
 		<dependency>
-    		<groupId>org.apache.chemistry.opencmis</groupId>
-    		<artifactId>chemistry-opencmis-client-impl</artifactId>
-    		<version>0.7.0</version>
- 		</dependency>
+    	   <groupId>org.apache.chemistry.opencmis</groupId>
+    	   <artifactId>chemistry-opencmis-client-impl</artifactId>
+	       <version>0.7.0</version>
+	   </dependency>
+	   <dependency>
+		  <groupId>org.alfresco.cmis.client</groupId>
+		  <artifactId>alfresco-opencmis-extension</artifactId>
+		  <version>0.3</version>
+	   </dependency>
 		<!-- Always useful -->
 		<dependency>
 			<groupId>commons-io</groupId>

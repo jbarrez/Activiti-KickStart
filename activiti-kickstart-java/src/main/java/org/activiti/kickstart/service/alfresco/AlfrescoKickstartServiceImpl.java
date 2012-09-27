@@ -137,6 +137,9 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 					parameters.put(SessionParameter.PASSWORD, cmisPassword);
 					parameters.put(SessionParameter.ATOMPUB_URL, cmisAtompubUrl);
 					parameters.put(SessionParameter.BINDING_TYPE, BindingType.ATOMPUB.value());
+					
+					// We're using the Alfresco extensions
+					parameters.put(SessionParameter.OBJECT_FACTORY_CLASS, "org.alfresco.cmis.client.impl.AlfrescoObjectFactoryImpl");
 
 					// First need to fetch the repository info to know the repo id
 					SessionFactory sessionFactory = SessionFactoryImpl.newInstance();
@@ -171,8 +174,8 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		// TODO: hack
 		
 		// Process name needs to follow certain rules
-		String processName = generateBpmnResourceName(kickstartWorkflow.getName());
-		String baseName = processNameToBaseName(processName);
+		String processFileName = generateBpmnResourceName(kickstartWorkflow.getName());
+		String baseName = processNameToBaseName(processFileName);
 		
 		// Process image (must go first, since it will add DI to the process xml)
 		LOGGER.info("Generating process image...");
@@ -209,10 +212,11 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 		// Create cmis document version of the workflow
 		HashMap<String, Object> properties = new HashMap<String, Object>();
-		properties.put("cmis:name", processName);
-		properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition"); // Important! Process won't be deployed otherwise
+		properties.put("cmis:name", processFileName);
+		properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition,P:cm:titled"); // Important! Process won't be deployed otherwise
 		properties.put("bpm:definitionDeployed", true);
 		properties.put("bpm:engineId", "activiti"); // Also vital for correct deployment!
+		properties.put("cm:description", kickstartWorkflow.getName());
 
 		// Upload the file
 		String workflowXML = marshallingService.marshallWorkflow(kickstartWorkflow);
@@ -221,7 +225,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		LOGGER.info("Uploading process definition xml...");
 		prettyLogXml(workflowXML);
 		
-		ContentStream contentStream = new ContentStreamImpl(processName, null, "application/xml", inputStream);
+		ContentStream contentStream = new ContentStreamImpl(processFileName, null, "application/xml", inputStream);
 		Document document = workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
 		
 		LOGGER.info("Process definition uploaded to '" + document.getPaths() + "'");
@@ -387,9 +391,9 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		// Fetch all BPMN 2.0 xml processes from the definitions folder
 	  Session cmisSession = getCmisSession();
     Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
-    String query = "select " + PropertyIds.OBJECT_ID + "," + PropertyIds.NAME + "," + PropertyIds.CREATION_DATE +
-            " from cmis:document where in_folder('" + workflowDefinitionFolder.getId() +
-            "') and cmis:name LIKE '%.bpmn20.xml' order by cmis:name";
+    String query = "select t.cm:description, d." + PropertyIds.NAME + ", d." + PropertyIds.CREATION_DATE +
+            " from cmis:document as d join cm:titled as t on d.cmis:objectId = t.cmis:objectId where in_folder(d, '" + workflowDefinitionFolder.getId() +
+            "') and d.cmis:name LIKE '%.bpmn20.xml' order by d.cmis:name";
     LOGGER.info("Executing CMIS query '" + query + "'");
     ItemIterable<QueryResult> results = cmisSession.query(query , false);
 	  
@@ -398,9 +402,8 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
     for (QueryResult result : results) {
       // We're using only a fraction of the KickstartWorkflowInfo objects
       KickstartWorkflowInfo kickstartWorkflowInfo = new KickstartWorkflowInfo();
-      String name = result.getPropertyValueById(PropertyIds.NAME);
-      kickstartWorkflowInfo.setName(name);
-      kickstartWorkflowInfo.setId(processNameToBaseName(name));  
+      kickstartWorkflowInfo.setName((String) result.getPropertyValueById("cm:description"));
+      kickstartWorkflowInfo.setId(processNameToBaseName((String) result.getPropertyValueById(PropertyIds.NAME)));  
       GregorianCalendar createDate = result.getPropertyValueById(PropertyIds.CREATION_DATE); 
       kickstartWorkflowInfo.setCreateTime(createDate.getTime()) ;
       workflowInfos.add(kickstartWorkflowInfo);
