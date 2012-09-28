@@ -25,7 +25,7 @@ public class WorkflowsResource extends BaseResource {
   
   @Get
   public List<KickstartWorkflowInfo> getWorkflowList() {
-    return getKickstartService().findWorkflowInformation();
+    return getKickstartService().findWorkflowInformation(false);
   }
 
 }

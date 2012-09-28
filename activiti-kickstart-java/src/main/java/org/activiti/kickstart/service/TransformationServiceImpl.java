@@ -84,7 +84,7 @@ public class TransformationServiceImpl implements TransformationService {
 	// BPMN 2.0 --> KICKSTART INTERNAL CLASSES ---------------------------------------
 	// -------------------------------------------------------------------------------
 
-	public List<KickstartWorkflowInfo> convertToWorkflowInfoList(List<ProcessDefinition> processDefinitions) {
+	public List<KickstartWorkflowInfo> convertToWorkflowInfoList(List<ProcessDefinition> processDefinitions, boolean includeCounts) {
 		List<KickstartWorkflowInfo> infoList = new ArrayList<KickstartWorkflowInfo>();
 		for (ProcessDefinition processDefinition : processDefinitions) {
 			KickstartWorkflowInfo workflowInfo = new KickstartWorkflowInfo();
@@ -99,14 +99,16 @@ public class TransformationServiceImpl implements TransformationService {
 					.singleResult().getDeploymentTime();
 			workflowInfo.setCreateTime(deploymentTime);
 
-			workflowInfo.setNrOfRuntimeInstances(historyService
-					.createHistoricProcessInstanceQuery()
-					.processDefinitionId(processDefinition.getId())
-					.unfinished().count());
-			workflowInfo.setNrOfHistoricInstances(historyService
-					.createHistoricProcessInstanceQuery()
-					.processDefinitionId(processDefinition.getId()).finished()
-					.count());
+			if (includeCounts) {
+  			workflowInfo.setNrOfRuntimeInstances(historyService
+  					.createHistoricProcessInstanceQuery()
+  					.processDefinitionId(processDefinition.getId())
+  					.unfinished().count());
+  			workflowInfo.setNrOfHistoricInstances(historyService
+  					.createHistoricProcessInstanceQuery()
+  					.processDefinitionId(processDefinition.getId()).finished()
+  					.count());
+			}
 
 			infoList.add(workflowInfo);
 		}

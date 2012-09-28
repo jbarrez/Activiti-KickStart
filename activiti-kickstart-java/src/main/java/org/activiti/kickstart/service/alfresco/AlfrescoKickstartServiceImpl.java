@@ -17,15 +17,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -57,70 +61,93 @@ import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
+import org.apache.chemistry.opencmis.commons.impl.json.JSONArray;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.methods.DeleteMethod;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.io.IOUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationConfig;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 /**
  * @author Joram Barrez
  */
 public class AlfrescoKickstartServiceImpl implements KickstartService {
 	      
-    private static final Logger LOGGER = Logger.getLogger(AlfrescoKickstartServiceImpl.class.getName());
-    
-    // Constants /////////////////////////////////////////////////////////////////////
-    
-    private static final String KICKSTART_PREFIX = "ks:";
-	
-	// Alfresco specific folders and urls //////////////////////////////////////////
-	
-    private static final String WORKFLOW_DEFINITION_FOLDER = "/Data Dictionary/Workflow Definitions";
-	
-	private static final String DATA_DICTIONARY_FOLDER = "/Data Dictionary/Models";
-	
-	private static final String FORM_CONFIG_UPLOAD_URL = "http://localhost:8081/share/page/modules/module";
-	
-	 // Task Model templates /////////////////////////////////////////////////////////
-	
-    private static final String TEMPLATE_FOLDER = "/org/activiti/kickstart/service/alfresco/";
-	
-	private static final String TASK_MODEL_TEMPLATE_FILE = TEMPLATE_FOLDER + "task-model-template.xml";
-	private static String TASK_MODEL_TEMPLATE;
-	
-	private static final String TASK_MODEL_TYPE_TEMPLATE_FILE =  TEMPLATE_FOLDER + "task-model-type-template.xml";
-	private static String TASK_MODEL_TYPE_TEMPLATE;
+  private static final Logger LOGGER = Logger.getLogger(AlfrescoKickstartServiceImpl.class.getName());
 
-	private static final String TASK_MODEL_PROPERTY_TEMPLATE_FILE =  TEMPLATE_FOLDER + "task-model-property-template.xml";
-	private static String TASK_MODEL_PROPERTY_TEMPLATE;
-	 
-    // Form Config templates /////////////////////////////////////////////////////////
-	 
-	private static final String FORM_CONFIG_TEMPLATE_FILE =  TEMPLATE_FOLDER + "form-config-template.xml";
-	private static String FORM_CONFIG_TEMPLATE;
-	 
-	private static final String FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE_FILE =  TEMPLATE_FOLDER + "form-config-evaluator-config-template.xml";
-	private static String FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE;
-	 
-	private static final String FORM_CONFIG_FIELD_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-field-template.xml";
-	private static String FORM_CONFIG_FIELD_TEMPLATE;
-	
-	private static final String FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-field-visibility-template.xml";
-    private static String FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE;
+  // Constants
+  // /////////////////////////////////////////////////////////////////////
 
-    // Service parameters /////////////////////////////////////////////////////////// 
-    
-    protected String cmisUser;
-	protected String cmisPassword;
-	protected String cmisAtompubUrl;
-	
-	// Service members /////////////////////////////////////////////////////////////
-	
-	protected Session cachedSession;
-	protected Bpmn20MarshallingService marshallingService;
+  private static final String KICKSTART_PREFIX = "ks:";
+  
+  // URLS
+  // ////////////////////////////////////////////
+  
+  private static final String ALFRESCO_BASE_URL = "http://localhost:8080/alfresco/service/";
+
+  private static final String SHARE_BASE_URL = "http://localhost:8081/share/";
+  
+
+  // Alfresco specific folders and urls
+  // //////////////////////////////////////////
+
+  private static final String WORKFLOW_DEFINITION_FOLDER = "/Data Dictionary/Workflow Definitions";
+
+  private static final String DATA_DICTIONARY_FOLDER = "/Data Dictionary/Models";
+
+  private static final String FORM_CONFIG_UPLOAD_URL = SHARE_BASE_URL + "page/modules/module";
+
+  // Task Model templates
+  // /////////////////////////////////////////////////////////
+
+  private static final String TEMPLATE_FOLDER = "/org/activiti/kickstart/service/alfresco/";
+
+  private static final String TASK_MODEL_TEMPLATE_FILE = TEMPLATE_FOLDER + "task-model-template.xml";
+  private static String TASK_MODEL_TEMPLATE;
+
+  private static final String TASK_MODEL_TYPE_TEMPLATE_FILE = TEMPLATE_FOLDER + "task-model-type-template.xml";
+  private static String TASK_MODEL_TYPE_TEMPLATE;
+
+  private static final String TASK_MODEL_PROPERTY_TEMPLATE_FILE = TEMPLATE_FOLDER + "task-model-property-template.xml";
+  private static String TASK_MODEL_PROPERTY_TEMPLATE;
+
+  // Form Config templates
+  // /////////////////////////////////////////////////////////
+
+  private static final String FORM_CONFIG_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-template.xml";
+  private static String FORM_CONFIG_TEMPLATE;
+
+  private static final String FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-evaluator-config-template.xml";
+  private static String FORM_CONFIG_EVALUATOR_CONFIG_TEMPLATE;
+
+  private static final String FORM_CONFIG_FIELD_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-field-template.xml";
+  private static String FORM_CONFIG_FIELD_TEMPLATE;
+
+  private static final String FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-field-visibility-template.xml";
+  private static String FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE;
+
+  // Service parameters
+  // ///////////////////////////////////////////////////////////
+
+  protected String cmisUser;
+  protected String cmisPassword;
+  protected String cmisAtompubUrl;
+
+  // Service members
+  // /////////////////////////////////////////////////////////////
+
+  protected Session cachedSession;
+  protected Bpmn20MarshallingService marshallingService;
 	
 	public AlfrescoKickstartServiceImpl(String cmisUser, String cmisPassword, String cmisAtompubUrl) {
 		this.cmisUser = cmisUser;
@@ -156,26 +183,30 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 	public String deployWorkflow(KickstartWorkflow kickstartWorkflow, Map<String, String> metadata) {
 	  
+	  // Validate
 	  String jsonSource = metadata.get(MetaDataKeys.WORKFLOW_JSON_SOURCE);
 	  if (jsonSource == null) {
 	    throw new RuntimeException("Missing metadata " + MetaDataKeys.WORKFLOW_JSON_SOURCE);
 	  }
+
+	  // Update worklow id
+	  String baseName = generateBaseName(kickstartWorkflow.getName());
+	  kickstartWorkflow.setId(baseName);
 	  
-		deployTaskModel(kickstartWorkflow); // needs to go first, as the formkey will be filled in here
-		return deployProcess(kickstartWorkflow, jsonSource); // Can't get the deployment id, so returning process definition id
+	  // Upload files
+		deployTaskModelAndFormConfig(kickstartWorkflow, baseName); // needs to go first, as the formkey will be filled in here
+		deployProcess(kickstartWorkflow, baseName, jsonSource); // Can't get the deployment id, so returning process definition id
+		return baseName;
 	}
 
-	protected String deployProcess(KickstartWorkflow kickstartWorkflow, String jsonSource) {
+	protected void deployProcess(KickstartWorkflow kickstartWorkflow, String baseFileName,String jsonSource) {
 		
 		// TODO: hack (until we get real users in there)
 		for (KickstartTask kickstartTask : kickstartWorkflow.getTasks()) {
 			((KickstartUserTask) kickstartTask).setAssignee("admin");
 		}
 		// TODO: hack
-		
-		// Process name needs to follow certain rules
-		String processFileName = generateBpmnResourceName(kickstartWorkflow.getName());
-		String baseName = processNameToBaseName(processFileName);
+	
 		
 		// Process image (must go first, since it will add DI to the process xml)
 		LOGGER.info("Generating process image...");
@@ -190,7 +221,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		}
 		
 		HashMap<String, Object> diagramProperties = new HashMap<String, Object>();
-		String diagramFileName = baseName + ".png";
+		String diagramFileName = baseFileName + ".png";
 		diagramProperties.put(PropertyIds.NAME, diagramFileName);
 		diagramProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
 		
@@ -200,7 +231,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		// Upload json source of workflow
 		LOGGER.info("Upload json source...");
 		HashMap<String, Object> jsonSrcProperties = new HashMap<String, Object>();
-		String jsonSrcFileName = baseName + ".json"; 
+		String jsonSrcFileName = baseFileName + ".json"; 
 		jsonSrcProperties.put(PropertyIds.NAME, jsonSrcFileName);
 		jsonSrcProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
 		
@@ -212,7 +243,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 		// Create cmis document version of the workflow
 		HashMap<String, Object> properties = new HashMap<String, Object>();
-		properties.put("cmis:name", processFileName);
+		properties.put("cmis:name", baseFileName + ".bpmn20.xml");
 		properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition,P:cm:titled"); // Important! Process won't be deployed otherwise
 		properties.put("bpm:definitionDeployed", true);
 		properties.put("bpm:engineId", "activiti"); // Also vital for correct deployment!
@@ -225,18 +256,17 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		LOGGER.info("Uploading process definition xml...");
 		prettyLogXml(workflowXML);
 		
-		ContentStream contentStream = new ContentStreamImpl(processFileName, null, "application/xml", inputStream);
+		ContentStream contentStream = new ContentStreamImpl(baseFileName + ".bpmn20.xml", null, "application/xml", inputStream);
 		Document document = workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
 		
 		LOGGER.info("Process definition uploaded to '" + document.getPaths() + "'");
-		return baseName;
 	}
 	
 	protected String processNameToBaseName(String processName) {
 	  return processName.replace(".bpmn20.xml", "");
 	}
 
-	private void deployTaskModel(KickstartWorkflow workflow) {
+	private void deployTaskModelAndFormConfig(KickstartWorkflow workflow, String baseFileName) {
 
 		// Following stringbuilders will construct a valid content model and form config
 		StringBuilder taskModelsString = new StringBuilder();
@@ -250,8 +280,8 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		}
 
 		// Upload results to Alfresco
-		uploadTaskModel(taskModelsString);
-		uploadFormConfig(evaluatorConfigStringBuilder, workflow);
+		uploadTaskModel(taskModelsString, baseFileName);
+		uploadFormConfig(evaluatorConfigStringBuilder, workflow, baseFileName);
 	}
 
 	protected void generateTaskAndFormConfigForUserTask(KickstartUserTask userTask,
@@ -308,12 +338,12 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		}
 	}
 	
-	protected void uploadTaskModel(StringBuilder taskModelsString) {
+	protected void uploadTaskModel(StringBuilder taskModelsString, String baseFileName) {
 		Session session = getCmisSession();
 		Folder modelFolder = (Folder) session.getObjectByPath(DATA_DICTIONARY_FOLDER);
 
 		String taskModelId = UUID.randomUUID().toString();
-		String taskModelFileName = "task-model-" + taskModelId + ".xml";
+		String taskModelFileName = baseFileName + "-task-model.xml";
 		HashMap<String, Object> properties = new HashMap<String, Object>();
 		properties.put("cmis:name", taskModelFileName);
 		properties.put("cmis:objectTypeId", "D:cm:dictionaryModel");
@@ -333,7 +363,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		modelFolder.createDocument(properties,contentStream, VersioningState.MAJOR);
 	}
 	
-	protected void uploadFormConfig(StringBuilder evaluatorConfigStringBuilder, KickstartWorkflow workflow) {
+	protected void uploadFormConfig(StringBuilder evaluatorConfigStringBuilder, KickstartWorkflow workflow, String baseFileName) {
 		HttpState state = new HttpState();
 		state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), 
 				new UsernamePasswordCredentials(cmisUser, cmisPassword));
@@ -344,10 +374,10 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 			// Wrap all form-configs in right XML -> this is the FULL form-config
 			// file, including generic start-task definition
-			String formId = "kickstart_form_" + UUID.randomUUID().toString();
+			String formId = "kickstart_form_" + baseFileName;
 			String formConfig = MessageFormat.format(getFormConfigTemplate(),
 					formId, 
-					workflow.getName().replace(" ", "_"), 
+					workflow.getId(),
 					evaluatorConfigStringBuilder.toString());
 			
 			LOGGER.info("Deploying form config XML: ");
@@ -387,7 +417,13 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		return "ks:" + property.toLowerCase().replace(" ", "_");
 	}
 
-	public List<KickstartWorkflowInfo> findWorkflowInformation() {
+	public List<KickstartWorkflowInfo> findWorkflowInformation(boolean includeCounts) {
+	  
+	  if (includeCounts) {
+	    // Not yet implemented, cause it would be an 1+n call ...
+	    throw new UnsupportedOperationException();
+	  }
+	  
 		// Fetch all BPMN 2.0 xml processes from the definitions folder
 	  Session cmisSession = getCmisSession();
     Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
@@ -411,10 +447,56 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
     
     return workflowInfos;
 	}
+	
+	public KickstartWorkflowInfo findWorkflowInformation(String processDefinitionId, boolean includeCounts) {
+	  KickstartWorkflowInfo kickstartWorkflowInfo = new KickstartWorkflowInfo();
+	  
+	  // Get general info
+	  Session cmisSession = getCmisSession();
+    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
+    
+    Document bpmn20Document = (Document) cmisSession.getObjectByPath(workflowDefinitionFolder.getPath() + "/" + generateBpmnResourceName(processDefinitionId));
+    if (bpmn20Document != null) {
+      kickstartWorkflowInfo.setId(processNameToBaseName((String) bpmn20Document.getPropertyValue(PropertyIds.NAME)));
+      kickstartWorkflowInfo.setName((String) bpmn20Document.getPropertyValue("cm:description"));
+      kickstartWorkflowInfo.setCreateTime(( (GregorianCalendar)bpmn20Document.getPropertyValue(PropertyIds.CREATION_DATE)).getTime());
+    } else {
+      throw new RuntimeException("Could not find a bpm20.xml file for " + processDefinitionId);
+    }
+	  
+	  // Get counts
+	  if (includeCounts) {
+      JsonNode jsonNode = retrieveWorkflowInstances(kickstartWorkflowInfo.getId(), 1, 0);
+      long activeCount = jsonNode.get("paging").get("totalItems").asLong();
+      kickstartWorkflowInfo.setNrOfRuntimeInstances(activeCount);
+	  }
+	  
+	  return kickstartWorkflowInfo;
+  }
 
 	public KickstartWorkflow findWorkflowById(String id) {
 		throw new UnsupportedOperationException();
 	}
+	
+	public void deleteWorkflow(String processDefinitionId) {
+    // Delete all workflow instances, as this will block the undeployment of the process otherwise
+	  deleteWorkflowInstances(processDefinitionId, 50);
+	  
+	  
+	  // TODO: make constants for the files, both for use in creation/removal
+	  
+	  // Remove all files in the workflow definition folder
+	  deleteDocumentFromFolder(WORKFLOW_DEFINITION_FOLDER, processDefinitionId + ".png");
+	  deleteDocumentFromFolder(WORKFLOW_DEFINITION_FOLDER, processDefinitionId + "_image.png");
+	  deleteDocumentFromFolder(WORKFLOW_DEFINITION_FOLDER, processDefinitionId + ".json");
+	  deleteDocumentFromFolder(WORKFLOW_DEFINITION_FOLDER, processDefinitionId + ".bpmn20.xml");
+	  
+	  // Remove task model
+	  deleteDocumentFromFolder(DATA_DICTIONARY_FOLDER, processDefinitionId + "-task-model.xml");
+	  
+	  // Remove form config
+	  deleteFormConfig(processDefinitionId);
+  }
 
 	public InputStream getProcessImage(String processDefinitionId) {
 	  Session cmisSession = getCmisSession();
@@ -437,20 +519,129 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
     workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
 	}
 	
-	protected String processDefinitionIdToProcessImage(String processDefinitionId) {
-	  return processDefinitionId + "_image.png";
-	}
-	
-	public InputStream getBpmnXml(String processDefinitionId) {
-		throw new UnsupportedOperationException();
-	}
+	// Helpets //////////////////////
 
 	/**
 	 * Generates a valid bpmn 2.0 file name for the given process name.
 	 */
-	protected String generateBpmnResourceName(String processName) {
-		return processName.replace(" ", "_") + ".bpmn20.xml";
+	protected String generateBpmnResourceName(String string) {
+		return string.replace(" ", "_") + ".bpmn20.xml";
 	}
+	
+	protected String generateBaseName(String name) {
+	  return name.toLowerCase().replace(" ", "_");
+	}
+	
+	 protected String processDefinitionIdToProcessImage(String processDefinitionId) {
+	    return generateBaseName(processDefinitionId) + "_image.png";
+	 }
+	  
+	 public InputStream getBpmnXml(String processDefinitionId) {
+	   throw new UnsupportedOperationException();
+	 }
+	 
+	 // CMIS helper methods  //////////////////////////////////////////////////////////////////////////////////////////////
+	 
+	 protected void deleteDocumentFromFolder(String folderPath, String documentName) {
+	   Session cmisSession = getCmisSession();
+	    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(folderPath);
+	    String path = workflowDefinitionFolder.getPath() + "/" + documentName;
+	    Document document = (Document) cmisSession.getObjectByPath(path);
+	    document.delete(true);
+	    LOGGER.info("Removed document " + path);
+	 }
+	 
+	 // Helper methods for REST calls /////////////////////////////////////////////////////////////////////////////////////
+	 
+	 protected JsonNode retrieveWorkflowInstances(String workflowId, long maxItems, long skipCount) {
+	   HttpState state = new HttpState();
+     state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials(cmisUser, cmisPassword));
+ 
+     // Only fetching one, we're only interested in the paging information, after all
+     String url = ALFRESCO_BASE_URL + "api/workflow-instances?state=active&definitionName=activiti$" + workflowId + "&maxItems=" + maxItems +"&skipCount=" + skipCount; 
+     GetMethod getMethod = new GetMethod(url);
+     LOGGER.info("Executing GET '" + url + "'");
+ 
+     try {
+       HttpClient httpClient = new HttpClient();
+       int result = httpClient.executeMethod(null, getMethod, state);
+ 
+       // Display Response
+       String responseJson = getMethod.getResponseBodyAsString();
+       LOGGER.info("Response status code: " + result);
+       LOGGER.info("Response body: " + responseJson);
+       
+       ObjectMapper mapper = new ObjectMapper();
+       JsonNode json = mapper.readTree(responseJson);
+       return json;
+       
+     } catch (Throwable t) {
+       System.err.println("Error: " + t.getMessage());
+       t.printStackTrace();
+     } finally {
+       getMethod.releaseConnection();
+     }
+     return null;
+	 }
+	 
+	 protected long deleteWorkflowInstances(String workflowId, long nrOfInstancesToDeletePerRequest) {
+	   JsonNode json = retrieveWorkflowInstances(workflowId, nrOfInstancesToDeletePerRequest, 0);
+	   ArrayNode data = (ArrayNode) json.get("data");
+	   for (int i=0; i<data.size(); i++) {
+	     String workflowInstanceId = data.get(i).get("id").asText();
+	     deleteWorkflowInstance(workflowInstanceId);
+	   }
+	   return data.size();
+	 }
+	 
+	 protected void deleteWorkflowInstance(String workflowInstanceId) {
+	   HttpState state = new HttpState();
+     state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials(cmisUser, cmisPassword));
+ 
+     // Only fetching one, we're only interested in the paging information, after all
+     String url = ALFRESCO_BASE_URL + "api/workflow-instances/" + workflowInstanceId + "?forced=true"; 
+     DeleteMethod deleteMethod = new DeleteMethod(url);
+     LOGGER.info("Executing DELETE '" + url + "'");
+ 
+     try {
+       HttpClient httpClient = new HttpClient();
+       int result = httpClient.executeMethod(null, deleteMethod, state);
+ 
+       // Display Response
+       String responseJson = deleteMethod.getResponseBodyAsString();
+       LOGGER.info("Response status code: " + result);
+       LOGGER.info("Response body: " + responseJson);
+       
+     } catch (Throwable t) {
+       System.err.println("Error: " + t.getMessage());
+       t.printStackTrace();
+     } finally {
+       deleteMethod.releaseConnection();
+     }
+	 }
+	 
+  protected void deleteFormConfig(String workflowId) {
+    // There is no json for this, so we fetch the html page and throw some regex at it. Elite, isn't it?
+    GetMethod deleteFormConfigMethod = new GetMethod(SHARE_BASE_URL + "page/modules/module/delete?moduleId=" + URLEncoder.encode("kickstart_form_" + workflowId));
+    executeHttpRequest(deleteFormConfigMethod);
+  }
+  
+  private String executeHttpRequest(HttpMethod method) {
+    try {
+      HttpState httpState = new HttpState();
+      httpState.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials("admin", "admin"));
+      
+      HttpClient httpClient = new HttpClient();
+      httpClient.executeMethod(null, method, httpState);
+      return method.getResponseBodyAsString();
+    } catch (Throwable t) {
+      LOGGER.log(Level.SEVERE, "Error: " + t.getMessage());
+      t.printStackTrace();
+    } finally {
+      method.releaseConnection();
+    }
+    return null;
+  }
 
 	// Getters & Setters
 
@@ -486,7 +677,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		this.marshallingService = marshallingService;
 	}
 	
-	// Helper methods /////////////////////////////////////////////////////////////////
+	// Helper methods for XML templates /////////////////////////////////////////////////////////////////
 	
 	protected String getTaskModelTemplate(){
 		if (TASK_MODEL_TEMPLATE == null) {

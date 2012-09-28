@@ -11,17 +11,42 @@ import org.activiti.kickstart.dto.KickstartFormProperty;
 import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
+import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 import org.activiti.kickstart.service.MetaDataKeys;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.node.ObjectNode;
+import org.restlet.data.Status;
 import org.restlet.representation.Representation;
+import org.restlet.resource.Delete;
+import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
 public class WorkflowResource extends BaseResource {
 
   private static final Logger LOGGER = Logger.getLogger(WorkflowResource.class.getName());
+  
+  @Get
+  public KickstartWorkflowInfo findWorkflowInfo() {
+    String workflowId = (String) getRequest().getAttributes().get("workflowId");
+    if (workflowId == null) {
+      getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+      return null;
+    }
+    
+    return getKickstartService().findWorkflowInformation(workflowId, true);
+  }
+  
+  @Delete
+  public void deleteWorkflow() {
+    String workflowId = (String) getRequest().getAttributes().get("workflowId");
+    if (workflowId == null) {
+      getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+    }
+    
+    getKickstartService().deleteWorkflow(workflowId);
+  }
 
   @Post
   public ObjectNode deployWorkflow(Representation representation) {

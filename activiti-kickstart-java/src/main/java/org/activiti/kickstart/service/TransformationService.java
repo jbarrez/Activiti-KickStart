@@ -40,7 +40,7 @@ public interface TransformationService {
 	 * Convert the given list of Activiti {@link ProcessDefinition} instances to
 	 * a lost of {@link KickstartWorkflowInfo} instances, representing information of those processes.
 	 */
-	List<KickstartWorkflowInfo> convertToWorkflowInfoList(List<ProcessDefinition> processDefinitions);
+	List<KickstartWorkflowInfo> convertToWorkflowInfoList(List<ProcessDefinition> processDefinitions, boolean includeCounts);
 
 	/**
 	 * Converts the given JAXB {@link Definitions} object to a {@link KickstartWorkflow} which is 

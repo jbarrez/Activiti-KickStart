@@ -24,9 +24,9 @@ public class WorkflowImageResource extends BaseResource {
     String workflowId = (String) getRequest().getAttributes().get("workflowId");
 
     if (workflowId == null) {
-      throw new ActivitiException("No workflowId provided in URL");
+      getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+      return null;
     }
-    
     
     InputStream imageStream = getKickstartService().getProcessImage(workflowId);
     if (imageStream == null) {

@@ -84,10 +84,7 @@ public class MarshallingServiceImpl implements Bpmn20MarshallingService {
 
 		// Process
 		org.activiti.kickstart.bpmn20.model.Process process = new org.activiti.kickstart.bpmn20.model.Process();
-		
-		String id = "kickstart_" + processName; 
-		process.setId(id);
-		kickstartWorkflow.setId(id);
+		process.setId(kickstartWorkflow.getId());
 		
 		process.setName(kickstartWorkflow.getName());
 		process.setExecutable(true);

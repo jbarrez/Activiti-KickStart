@@ -58,13 +58,17 @@ public class KickstartServiceImpl implements KickstartService {
 		return deployment.getId();
 	}
 
-	public List<KickstartWorkflowInfo> findWorkflowInformation() {
+	public List<KickstartWorkflowInfo> findWorkflowInformation(boolean includeCounts) {
 		List<ProcessDefinition> processDefinitions = repositoryService
 				.createProcessDefinitionQuery()
 				.processDefinitionKeyLike("adhoc_%")
 				.orderByProcessDefinitionName().asc()
 				.orderByProcessDefinitionVersion().desc().list();
-		return transformationService.convertToWorkflowInfoList(processDefinitions);
+		return transformationService.convertToWorkflowInfoList(processDefinitions, includeCounts);
+	}
+	
+	public KickstartWorkflowInfo findWorkflowInformation(String processDefinitionId, boolean includeCounts) {
+	  throw new UnsupportedOperationException();
 	}
 
 	public KickstartWorkflow findWorkflowById(String id) {
@@ -113,6 +117,10 @@ public class KickstartServiceImpl implements KickstartService {
 		return repositoryService.getResourceAsStream(
 				processDefinition.getDeploymentId(),
 				processDefinition.getResourceName());
+	}
+	
+	public void deleteWorkflow(String processDefinitionId) {
+	  throw new UnsupportedOperationException();
 	}
 
 	// Helper methods

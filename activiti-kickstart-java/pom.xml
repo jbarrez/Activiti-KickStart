@@ -7,13 +7,13 @@
 	<artifactId>activiti-kickstart-java</artifactId>
 	<packaging>jar</packaging>
 
-    <parent>
-        <groupId>org.activiti</groupId>
-        <artifactId>activiti-kickstart</artifactId>
-        <version>1.1</version>
-    </parent>
+	<parent>
+		<groupId>org.activiti</groupId>
+		<artifactId>activiti-kickstart</artifactId>
+		<version>1.1</version>
+	</parent>
 
-    <properties>
+	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
@@ -26,13 +26,13 @@
 					<source>1.5</source>
 					<target>1.5</target>
 					<showDeprecation>true</showDeprecation>
-          			<showWarnings>true</showWarnings>
-          			<optimize>true</optimize>
+					<showWarnings>true</showWarnings>
+					<optimize>true</optimize>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<dependencies>
 		<!-- Activiti dependencies -->
 		<dependency>
@@ -42,15 +42,15 @@
 		</dependency>
 		<!-- JAXB dependencies -->
 		<dependency>
-    		<groupId>javax.xml.bind</groupId>
-    		<artifactId>jaxb-api</artifactId>
-	        <version>2.2.1</version>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.2.1</version>
 		</dependency>
-      	<dependency>
-        	<groupId>com.sun.xml.bind</groupId>
-        	<artifactId>jaxb-impl</artifactId>
-        	<version>2.1.7</version>
-      	</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>2.1.7</version>
+		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
@@ -58,23 +58,39 @@
 		</dependency>
 		<!-- CMIS -->
 		<dependency>
-    	   <groupId>org.apache.chemistry.opencmis</groupId>
-    	   <artifactId>chemistry-opencmis-client-impl</artifactId>
-	       <version>0.7.0</version>
-	   </dependency>
-	   <dependency>
-		  <groupId>org.alfresco.cmis.client</groupId>
-		  <artifactId>alfresco-opencmis-extension</artifactId>
-		  <version>0.3</version>
-	   </dependency>
+			<groupId>org.apache.chemistry.opencmis</groupId>
+			<artifactId>chemistry-opencmis-client-impl</artifactId>
+			<version>0.7.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.alfresco.cmis.client</groupId>
+			<artifactId>alfresco-opencmis-extension</artifactId>
+			<version>0.3</version>
+		</dependency>
+		<!-- Json -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>2.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.0.0</version>
+		</dependency>
 		<!-- Always useful -->
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.4</version>
 		</dependency>
- 		<!-- REST calls -->
- 		<dependency>
+		<!-- REST calls -->
+		<dependency>
 			<groupId>commons-httpclient</groupId>
 			<artifactId>commons-httpclient</artifactId>
 			<version>3.1</version>

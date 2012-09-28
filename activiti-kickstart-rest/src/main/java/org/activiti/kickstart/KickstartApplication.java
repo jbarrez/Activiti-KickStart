@@ -27,7 +27,9 @@ public class KickstartApplication extends Application {
     Router router = new Router(getContext());
 
     router.attach("/workflow", WorkflowResource.class);
+    router.attach("/workflow/{workflowId}", WorkflowResource.class);
     router.attach("/workflow/{workflowId}/image", WorkflowImageResource.class);
+    
     router.attach("/workflows", WorkflowsResource.class);
     
     return router;

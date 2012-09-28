@@ -38,13 +38,24 @@ public interface KickstartService {
 	 * correspond with all the processes that are deployed to the configured
 	 * Activiti engine and which can are compatible with KickStart.
 	 */
-	List<KickstartWorkflowInfo> findWorkflowInformation();
+	List<KickstartWorkflowInfo> findWorkflowInformation(boolean includeCounts);
+	
+	/**
+	 * Find the {@link KickstartWorkflowInfo} of one specific kickstart workflow.
+	 */
+	KickstartWorkflowInfo findWorkflowInformation(String processDefinitionId, boolean includeCounts);
 
 	/**
 	 * Fetches the process definition for the KickStart workflow from
 	 * the configured Activiti engine data store.
 	 */
 	KickstartWorkflow findWorkflowById(String id);
+	
+	/**
+	 * Removes the workflow definition with the matching id.
+	 * Will remove all runtime instances of this process!
+	 */
+	void deleteWorkflow(String processDefinitionId);
 
 	/**
 	 * Returns an {@link InputStream} to the process image for the process definition
