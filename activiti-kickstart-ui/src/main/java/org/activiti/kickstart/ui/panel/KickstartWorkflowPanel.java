@@ -162,7 +162,7 @@ public class KickstartWorkflowPanel extends Panel {
 
 			public void buttonClick(ClickEvent event) {
 				try {
-					kickStartService.deployWorkflow(createWorkflow());
+					kickStartService.deployWorkflow(createWorkflow(), null);
 					Panel successPanel = new Panel();
 					successPanel.setStyleName(Reindeer.PANEL_LIGHT);
 					Label successLabel = new Label("Process successfully deployed");

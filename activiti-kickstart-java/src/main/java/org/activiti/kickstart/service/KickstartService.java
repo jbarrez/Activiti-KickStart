@@ -32,6 +32,11 @@ public interface KickstartService {
 	 * Metadata is an optional map, for those services that would like to pass stuff.
 	 */
 	String deployWorkflow(KickstartWorkflow kickstartWorkflowDto, Map<String, String> metadata);
+	
+	/**
+	 * Retrieves the metadata that was uploaded during workflow deployment.
+	 */
+	String getWorkflowMetaData(String processDefinitionId, String metadataKey);
 
 	/**
 	 * Retrieves a list of {@link KickstartWorkflowInfo} instances which
@@ -53,7 +58,7 @@ public interface KickstartService {
 	
 	/**
 	 * Removes the workflow definition with the matching id.
-	 * Will remove all runtime instances of this process!
+	 * Note that this will remove all runtime instances of this process!
 	 */
 	void deleteWorkflow(String processDefinitionId);
 

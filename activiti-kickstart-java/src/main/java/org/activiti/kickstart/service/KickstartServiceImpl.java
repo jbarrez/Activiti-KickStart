@@ -57,6 +57,10 @@ public class KickstartServiceImpl implements KickstartService {
 		Deployment deployment = deploymentBuilder.deploy();
 		return deployment.getId();
 	}
+	
+	 public String getWorkflowMetaData(String processDefinitionId, String metadataKey) {
+	  throw new UnsupportedOperationException();
+	}
 
 	public List<KickstartWorkflowInfo> findWorkflowInformation(boolean includeCounts) {
 		List<ProcessDefinition> processDefinitions = repositoryService

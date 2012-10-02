@@ -12,9 +12,11 @@
  */
 package org.activiti.kickstart.service.alfresco;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URLEncoder;
@@ -22,14 +24,11 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -61,7 +60,6 @@ import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
-import org.apache.chemistry.opencmis.commons.impl.json.JSONArray;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpState;
@@ -75,7 +73,6 @@ import org.apache.commons.io.IOUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 /**
@@ -389,11 +386,15 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 			int result = httpClient.executeMethod(null, postMethod, state);
 
 			// Display status code
-			System.out.println("Response status code: " + result);
+			LOGGER.info("Response status code: " + result);
 
 			// Display response
-			System.out.println("Response body: ");
-			System.out.println(postMethod.getResponseBodyAsString());
+			LOGGER.info("Response body: ");
+			LOGGER.info(postMethod.getResponseBodyAsString());
+			
+			// We're also uploading it to the workflow definition folder, for future use
+			LOGGER.info("Uploading formconfig to " + WORKFLOW_DEFINITION_FOLDER);
+			uploadStringToDocument(formConfig, WORKFLOW_DEFINITION_FOLDER, baseFileName + "-form-config.xml");
 		} catch (Throwable t) {
 			System.err.println("Error: " + t.getMessage());
 			t.printStackTrace();
@@ -415,6 +416,38 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 	protected Object createFriendlyName(String property) {
 		return "ks:" + property.toLowerCase().replace(" ", "_");
+	}
+	
+	public String getWorkflowMetaData(String processDefinitionId, String metadataKey) {
+	  String metadataFile = processDefinitionId;
+	  if (metadataKey.equals(MetaDataKeys.WORKFLOW_JSON_SOURCE)) {
+	    metadataFile = metadataFile + ".json";
+	  }
+	  
+	  Document document = getDocumentFromFolder(WORKFLOW_DEFINITION_FOLDER, metadataFile);
+	  StringBuilder strb = new StringBuilder();
+	  
+	  BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(document.getContentStream().getStream()));
+	  try {
+	    String line = bufferedReader.readLine();
+	    while (line != null) {
+	      strb.append(line);
+	      line = bufferedReader.readLine();
+	    }
+	  } catch (Exception e) {
+	    LOGGER.log(Level.SEVERE, "Could not read metadata '" + metadataKey + "' : " + e.getMessage());
+	    e.printStackTrace();
+	  } finally {
+	    if (bufferedReader != null) {
+	      try {
+	        bufferedReader.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+	    }
+	  }
+	  
+	  return strb.toString();
 	}
 
 	public List<KickstartWorkflowInfo> findWorkflowInformation(boolean includeCounts) {
@@ -542,15 +575,35 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	 
 	 // CMIS helper methods  //////////////////////////////////////////////////////////////////////////////////////////////
 	 
-	 protected void deleteDocumentFromFolder(String folderPath, String documentName) {
-	   Session cmisSession = getCmisSession();
-	    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(folderPath);
-	    String path = workflowDefinitionFolder.getPath() + "/" + documentName;
-	    Document document = (Document) cmisSession.getObjectByPath(path);
-	    document.delete(true);
-	    LOGGER.info("Removed document " + path);
-	 }
-	 
+  protected void deleteDocumentFromFolder(String folderPath, String documentName) {
+    Session cmisSession = getCmisSession();
+    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(folderPath);
+    String path = workflowDefinitionFolder.getPath() + "/" + documentName;
+    Document document = (Document) cmisSession.getObjectByPath(path);
+    document.delete(true);
+    LOGGER.info("Removed document " + path);
+  }
+
+  protected Document getDocumentFromFolder(String folderPath, String documentName) {
+    Session cmisSession = getCmisSession();
+    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(folderPath);
+    String path = workflowDefinitionFolder.getPath() + "/" + documentName;
+    return (Document) cmisSession.getObjectByPath(path);
+  }
+  
+  protected void uploadStringToDocument(String string, String folderPath, String documentName) {
+    Session cmisSession = getCmisSession();
+    Folder folder = (Folder) cmisSession.getObjectByPath(folderPath);
+    
+    HashMap<String, Object> properties = new HashMap<String, Object>();
+    String fileName = processDefinitionIdToProcessImage(documentName); 
+    properties.put("cmis:name", fileName);
+    properties.put("cmis:objectTypeId", "cmis:document");
+    
+    ContentStream contentStream = new ContentStreamImpl(fileName, null, "image/png", new ByteArrayInputStream(string.getBytes()));
+    folder.createDocument(properties, contentStream, VersioningState.MAJOR);
+  }
+
 	 // Helper methods for REST calls /////////////////////////////////////////////////////////////////////////////////////
 	 
 	 protected JsonNode retrieveWorkflowInstances(String workflowId, long maxItems, long skipCount) {

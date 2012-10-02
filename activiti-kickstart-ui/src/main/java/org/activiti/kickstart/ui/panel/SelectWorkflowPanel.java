@@ -19,7 +19,6 @@ import java.util.List;
 import org.activiti.kickstart.KickstartApplication;
 import org.activiti.kickstart.dto.KickstartWorkflowInfo;
 import org.activiti.kickstart.service.KickstartService;
-import org.activiti.kickstart.service.KickstartServiceFactory;
 import org.activiti.kickstart.ui.listener.EditExistingKickstartWorkflowClickListener;
 import org.activiti.kickstart.ui.popup.ProcessImagePopupWindow;
 
@@ -113,7 +112,7 @@ public class SelectWorkflowPanel extends Panel {
   }
 
   protected void initWorkflowTableContents() {
-    List<KickstartWorkflowInfo> processDefinitions = kickstartService.findWorkflowInformation();
+    List<KickstartWorkflowInfo> processDefinitions = kickstartService.findWorkflowInformation(true);
     for (final KickstartWorkflowInfo infoDto : processDefinitions) {
       Item workflowItem = workflowTable.getItem(workflowTable.addItem());
       Button nameButton = new Button(infoDto.getName());

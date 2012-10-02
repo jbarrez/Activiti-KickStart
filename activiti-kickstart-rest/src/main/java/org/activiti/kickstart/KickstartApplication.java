@@ -29,6 +29,7 @@ public class KickstartApplication extends Application {
     router.attach("/workflow", WorkflowResource.class);
     router.attach("/workflow/{workflowId}", WorkflowResource.class);
     router.attach("/workflow/{workflowId}/image", WorkflowImageResource.class);
+    router.attach("/workflow/{workflowId}/metadata/{metaDataKey}", WorkflowMetaDataResource.class);
     
     router.attach("/workflows", WorkflowsResource.class);
     

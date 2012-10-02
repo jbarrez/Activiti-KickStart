@@ -20,6 +20,7 @@ import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
 import org.activiti.kickstart.dto.KickstartWorkflow;
 import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.KickstartServiceFactory;
+import org.activiti.kickstart.service.MarshallingServiceImpl;
 import org.activiti.kickstart.ui.ViewManager;
 
 import com.vaadin.terminal.StreamResource;
@@ -78,7 +79,7 @@ public class ProcessImagePopupWindow extends Window {
 				}
 			};
 		} else if (kickstartWorkflow != null) {
-			final ProcessDiagramGenerator converter = new ProcessDiagramGenerator(kickstartWorkflow, KickstartServiceFactory.getMarshallingService());
+			final ProcessDiagramGenerator converter = new ProcessDiagramGenerator(kickstartWorkflow, new MarshallingServiceImpl());
 			streamSource = new StreamSource() {
 
 				private static final long serialVersionUID = 239500411112658830L;
