@@ -1,9 +1,11 @@
 package org.activiti.kickstart;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.activiti.kickstart.dto.KickstartForm;
@@ -22,11 +24,12 @@ import org.restlet.representation.Representation;
 import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
+import org.restlet.resource.Put;
 
 public class WorkflowResource extends BaseResource {
 
   private static final Logger LOGGER = Logger.getLogger(WorkflowResource.class.getName());
-  
+
   @Get
   public KickstartWorkflowInfo findWorkflowInfo() {
     String workflowId = (String) getRequest().getAttributes().get("workflowId");
@@ -34,30 +37,73 @@ public class WorkflowResource extends BaseResource {
       getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
       return null;
     }
-    
-    return getKickstartService().findWorkflowInformation(workflowId, true);
+
+    KickstartWorkflowInfo kickstartWorkflowInfo = getKickstartService().findWorkflowInformation(workflowId, true);
+    if (kickstartWorkflowInfo == null) {
+      getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+    }
+    return kickstartWorkflowInfo;
   }
-  
+
   @Delete
   public void deleteWorkflow() {
     String workflowId = (String) getRequest().getAttributes().get("workflowId");
     if (workflowId == null) {
       getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND);
     }
-    
+
     getKickstartService().deleteWorkflow(workflowId);
   }
 
   @Post
-  public ObjectNode deployWorkflow(Representation representation) {
+  public ObjectNode deployWorkflow(Representation representation) throws IOException {
 
-    // Convert body to internal workflow object
+    String json = convertToJsonFrom(representation);
+    KickstartWorkflow workflow = convertFrom(json);
+    
+    // Uniqueness check (post is used for new processes)
+    if (getKickstartService().findWorkflowInformation(workflow.getId(), false) != null) {
+      getResponse().setStatus(Status.CLIENT_ERROR_CONFLICT);
+      return null;
+    }
+    
+    // Actually deploy this workflow
+    return deployWorkflow(workflow, json);
+  }
+
+  @Put
+  public ObjectNode updateProcess(Representation representation) throws IOException {
+    String json = convertToJsonFrom(representation);
+    KickstartWorkflow workflow = convertFrom(json);
+    return deployWorkflow(workflow, json);
+  }
+
+  // Helpers
+  // ////////////////////////////////////////////////////////////////////////////
+  
+  protected ObjectNode deployWorkflow(KickstartWorkflow workflow, String json) {
+    String workflowId = getKickstartService().deployWorkflow(workflow, Collections.singletonMap(MetaDataKeys.WORKFLOW_JSON_SOURCE, json));
+    ObjectNode idNode = new ObjectMapper().createObjectNode();
+    idNode.put("id", workflowId);
+    return idNode;
+  }
+  
+  protected String convertToJsonFrom(Representation representation) {
+    try {
+        return representation.getText();
+    } catch (IOException e) {
+      LOGGER.log(Level.SEVERE, "Could not convert to json string");
+      e.printStackTrace();
+      return null;
+    }
+  }
+
+  protected KickstartWorkflow convertFrom(String jsonText) {
     KickstartWorkflow workflow = new KickstartWorkflow();
 
     try {
       ObjectMapper mapper = new ObjectMapper();
       mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-      String jsonText = representation.getText();
       JsonNode json = mapper.readTree(jsonText);
 
       LOGGER.info("Received json:");
@@ -69,6 +115,7 @@ public class WorkflowResource extends BaseResource {
         throw new RuntimeException("Missing parameter [name] in json body");
       }
       workflow.setName(name);
+      workflow.setId(generateBaseName(name));
 
       // Workflow description
       String description = json.path("description").getTextValue();
@@ -116,18 +163,16 @@ public class WorkflowResource extends BaseResource {
         }
       }
 
-      // Actually deploy this workflow
-      String workflowId = getKickstartService().deployWorkflow(workflow, 
-              Collections.singletonMap(MetaDataKeys.WORKFLOW_JSON_SOURCE, jsonText));
-      ObjectNode idNode = new ObjectMapper().createObjectNode();
-      idNode.put("id", workflowId);
-      return idNode;
-
+      return workflow;
     } catch (Exception e) {
+      LOGGER.log(Level.SEVERE, "Could not convert json to internal KickStartWorkflow");
       e.printStackTrace();
-      throw new RuntimeException("Could not deploy workflow: " + e.getMessage());
+      return null;
     }
+  }
 
+  protected String generateBaseName(String name) {
+    return name.toLowerCase().replace(" ", "_");
   }
 
 }

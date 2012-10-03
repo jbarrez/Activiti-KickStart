@@ -59,6 +59,7 @@ import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
+import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -180,15 +181,14 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 	public String deployWorkflow(KickstartWorkflow kickstartWorkflow, Map<String, String> metadata) {
 	  
-	  // Validate
+	  // Validate metadata
 	  String jsonSource = metadata.get(MetaDataKeys.WORKFLOW_JSON_SOURCE);
 	  if (jsonSource == null) {
 	    throw new RuntimeException("Missing metadata " + MetaDataKeys.WORKFLOW_JSON_SOURCE);
 	  }
 
-	  // Update worklow id
-	  String baseName = generateBaseName(kickstartWorkflow.getName());
-	  kickstartWorkflow.setId(baseName);
+	  // Update workflow id
+	  String baseName = kickstartWorkflow.getId();
 	  
 	  // Upload files
 		deployTaskModelAndFormConfig(kickstartWorkflow, baseName); // needs to go first, as the formkey will be filled in here
@@ -488,13 +488,17 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	  Session cmisSession = getCmisSession();
     Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
     
-    Document bpmn20Document = (Document) cmisSession.getObjectByPath(workflowDefinitionFolder.getPath() + "/" + generateBpmnResourceName(processDefinitionId));
-    if (bpmn20Document != null) {
-      kickstartWorkflowInfo.setId(processNameToBaseName((String) bpmn20Document.getPropertyValue(PropertyIds.NAME)));
-      kickstartWorkflowInfo.setName((String) bpmn20Document.getPropertyValue("cm:description"));
-      kickstartWorkflowInfo.setCreateTime(( (GregorianCalendar)bpmn20Document.getPropertyValue(PropertyIds.CREATION_DATE)).getTime());
-    } else {
-      throw new RuntimeException("Could not find a bpm20.xml file for " + processDefinitionId);
+    try {
+      Document bpmn20Document = (Document) cmisSession.getObjectByPath(workflowDefinitionFolder.getPath() + "/" + generateBpmnResourceName(processDefinitionId));
+      if (bpmn20Document != null) {
+        kickstartWorkflowInfo.setId(processNameToBaseName((String) bpmn20Document.getPropertyValue(PropertyIds.NAME)));
+        kickstartWorkflowInfo.setName((String) bpmn20Document.getPropertyValue("cm:description"));
+        kickstartWorkflowInfo.setCreateTime(( (GregorianCalendar)bpmn20Document.getPropertyValue(PropertyIds.CREATION_DATE)).getTime());
+      } else {
+        return null;
+      }
+    } catch (CmisObjectNotFoundException e) {
+      return null;
     }
 	  
 	  // Get counts
@@ -529,6 +533,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	  
 	  // Remove form config
 	  deleteFormConfig(processDefinitionId);
+	  deleteDocumentFromFolder(WORKFLOW_DEFINITION_FOLDER, processDefinitionId + "-form-config.xml");
   }
 
 	public InputStream getProcessImage(String processDefinitionId) {
@@ -561,12 +566,8 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		return string.replace(" ", "_") + ".bpmn20.xml";
 	}
 	
-	protected String generateBaseName(String name) {
-	  return name.toLowerCase().replace(" ", "_");
-	}
-	
 	 protected String processDefinitionIdToProcessImage(String processDefinitionId) {
-	    return generateBaseName(processDefinitionId) + "_image.png";
+	    return processDefinitionId + "_image.png";
 	 }
 	  
 	 public InputStream getBpmnXml(String processDefinitionId) {
