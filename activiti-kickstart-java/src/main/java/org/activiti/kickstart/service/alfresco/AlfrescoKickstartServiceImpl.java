@@ -204,60 +204,91 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		}
 		// TODO: hack
 	
+		Session cmisSession = getCmisSession();
+		Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
 		
-		// Process image (must go first, since it will add DI to the process xml)
-		LOGGER.info("Generating process image...");
+		uploadDiagramFile(kickstartWorkflow, baseFileName, workflowDefinitionFolder); // Process image (must go first, since it will add DI to the process xml)
+		uploadJsonFile(baseFileName, jsonSource, workflowDefinitionFolder);
+		uploadProcessFile(kickstartWorkflow, baseFileName, workflowDefinitionFolder);
+	}
+
+  private void uploadDiagramFile(KickstartWorkflow kickstartWorkflow, String baseFileName, Folder workflowDefinitionFolder) {
+    LOGGER.info("Generating process image...");
 		ProcessDiagramGenerator diagramGenerator = new ProcessDiagramGenerator(kickstartWorkflow, marshallingService);
 		InputStream diagramInputStream = diagramGenerator.execute();
 		
 		// Diagram is deployed next to the process xml
-		Session cmisSession = getCmisSession();
-		Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
 		if (workflowDefinitionFolder == null) {
 			throw new RuntimeException("Cannot find workflow definition folder '" + WORKFLOW_DEFINITION_FOLDER + "'");
 		}
 		
-		HashMap<String, Object> diagramProperties = new HashMap<String, Object>();
 		String diagramFileName = baseFileName + ".png";
-		diagramProperties.put(PropertyIds.NAME, diagramFileName);
-		diagramProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
-		
 		ContentStream diagramContentStream = new ContentStreamImpl(diagramFileName, null, "image/png", diagramInputStream);
-		workflowDefinitionFolder.createDocument(diagramProperties, diagramContentStream, VersioningState.MAJOR);
+		Document diagramDocument = getDocumentFromFolder(workflowDefinitionFolder.getPath(), diagramFileName);
+		if (diagramDocument == null) {
 		
-		// Upload json source of workflow
-		LOGGER.info("Upload json source...");
-		HashMap<String, Object> jsonSrcProperties = new HashMap<String, Object>();
+  		HashMap<String, Object> diagramProperties = new HashMap<String, Object>();
+  		diagramProperties.put(PropertyIds.NAME, diagramFileName);
+  		diagramProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+  		
+  		workflowDefinitionFolder.createDocument(diagramProperties, diagramContentStream, VersioningState.MAJOR);
+  		
+		} else {
+		  
+		  diagramDocument.setContentStream(diagramContentStream, true);
+		  
+		}
+  }
+
+  private void uploadJsonFile(String baseFileName, String jsonSource, Folder workflowDefinitionFolder) {
+    LOGGER.info("Upload json source...");
 		String jsonSrcFileName = baseFileName + ".json"; 
-		jsonSrcProperties.put(PropertyIds.NAME, jsonSrcFileName);
-		jsonSrcProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+		ContentStream jsonSrcContentStream = new ContentStreamImpl(jsonSrcFileName, null, "application/json", new ByteArrayInputStream(jsonSource.getBytes()));
+		Document jsonDocument = getDocumentFromFolder(workflowDefinitionFolder.getPath(), jsonSrcFileName);
+		if (jsonDocument == null) {
 		
-    ContentStream jsonSrcContentStream = new ContentStreamImpl(jsonSrcFileName, null, "application/json", new ByteArrayInputStream(jsonSource.getBytes()));
-    workflowDefinitionFolder.createDocument(jsonSrcProperties, jsonSrcContentStream, VersioningState.MAJOR);
-		
-		// Deploying bpmn20.xml files to the workflow definition folder
-		// of the Alfresco Data Dictionary will automatically deploy them
+  		HashMap<String, Object> jsonSrcProperties = new HashMap<String, Object>();
+  		jsonSrcProperties.put(PropertyIds.NAME, jsonSrcFileName);
+  		jsonSrcProperties.put(PropertyIds.OBJECT_TYPE_ID, "cmis:document");
+  		
+      workflowDefinitionFolder.createDocument(jsonSrcProperties, jsonSrcContentStream, VersioningState.MAJOR);
+      
+		} else {
+		  
+		  jsonDocument.setContentStream(jsonSrcContentStream, true);
+		  
+		}
+  }
 
-		// Create cmis document version of the workflow
-		HashMap<String, Object> properties = new HashMap<String, Object>();
-		properties.put("cmis:name", baseFileName + ".bpmn20.xml");
-		properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition,P:cm:titled"); // Important! Process won't be deployed otherwise
-		properties.put("bpm:definitionDeployed", true);
-		properties.put("bpm:engineId", "activiti"); // Also vital for correct deployment!
-		properties.put("cm:description", kickstartWorkflow.getName());
-
-		// Upload the file
-		String workflowXML = marshallingService.marshallWorkflow(kickstartWorkflow);
-		InputStream inputStream = new ByteArrayInputStream(workflowXML.getBytes()); 
+  private void uploadProcessFile(KickstartWorkflow kickstartWorkflow, String baseFileName, Folder workflowDefinitionFolder) {
+    String processFileName = baseFileName + ".bpmn20.xml";
 		
-		LOGGER.info("Uploading process definition xml...");
-		prettyLogXml(workflowXML);
-		
-		ContentStream contentStream = new ContentStreamImpl(baseFileName + ".bpmn20.xml", null, "application/xml", inputStream);
-		Document document = workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
-		
-		LOGGER.info("Process definition uploaded to '" + document.getPaths() + "'");
-	}
+    String workflowXML = marshallingService.marshallWorkflow(kickstartWorkflow);
+    InputStream inputStream = new ByteArrayInputStream(workflowXML.getBytes()); 
+    LOGGER.info("Uploading process definition xml...");
+    prettyLogXml(workflowXML);
+    ContentStream processContentStream = new ContentStreamImpl(processFileName, null, "application/xml", inputStream);
+    
+    Document processDocument = getDocumentFromFolder(workflowDefinitionFolder.getPath(), processFileName);
+    if (processDocument == null) {
+      
+      HashMap<String, Object> properties = new HashMap<String, Object>();
+      properties.put("cmis:name", processFileName);
+      properties.put("cmis:objectTypeId", "D:bpm:workflowDefinition,P:cm:titled"); // Important! Process won't be deployed otherwise
+      properties.put("bpm:definitionDeployed", true);
+      properties.put("bpm:engineId", "activiti"); // Also vital for correct deployment!
+      properties.put("cm:description", kickstartWorkflow.getName());
+      
+      processDocument = workflowDefinitionFolder.createDocument(properties, processContentStream, VersioningState.MAJOR);
+      
+    } else {
+      
+      processDocument.setContentStream(processContentStream, true);
+      
+    }
+    
+		LOGGER.info("Process definition uploaded to '" + processDocument.getPaths() + "'");
+  }
 	
 	protected String processNameToBaseName(String processName) {
 	  return processName.replace(".bpmn20.xml", "");
@@ -339,25 +370,32 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		Session session = getCmisSession();
 		Folder modelFolder = (Folder) session.getObjectByPath(DATA_DICTIONARY_FOLDER);
 
-		String taskModelId = UUID.randomUUID().toString();
 		String taskModelFileName = baseFileName + "-task-model.xml";
-		HashMap<String, Object> properties = new HashMap<String, Object>();
-		properties.put("cmis:name", taskModelFileName);
-		properties.put("cmis:objectTypeId", "D:cm:dictionaryModel");
-		properties.put("cm:modelActive", true);
+		
+    // Finally, wrap all taskdefinitions is right XML -> this is the FULL
+    // model file, including generic start-task
+    String taskModelId = UUID.randomUUID().toString();
+    String taskModelXML = MessageFormat.format(getTaskModelTemplate(), taskModelId, taskModelsString.toString());
+    LOGGER.info("Deploying task model XML:");
+    prettyLogXml(taskModelXML);
+    ByteArrayInputStream inputStream = new ByteArrayInputStream(taskModelXML.getBytes());
+    ContentStream contentStream = new ContentStreamImpl(taskModelFileName, null, "application/xml", inputStream);
+		
+    // Verify whether it is an update or a new workflow
+		Document taskModelDocument = getDocumentFromFolder(DATA_DICTIONARY_FOLDER, taskModelFileName);
+		if (taskModelDocument == null) {
+		  HashMap<String, Object> properties = new HashMap<String, Object>();
+	    properties.put("cmis:name", taskModelFileName);
+	    properties.put("cmis:objectTypeId", "D:cm:dictionaryModel");
+	    properties.put("cm:modelActive", true);
 
-		// Finally, wrap all taskdefinitions is right XML -> this is the FULL
-		// model file, including generic start-task
-		String taskModelXML = MessageFormat.format(getTaskModelTemplate(),
-				taskModelId, taskModelsString.toString());
-		LOGGER.info("Deploying task model XML:");
-		prettyLogXml(taskModelXML);
-		ByteArrayInputStream inputStream = new ByteArrayInputStream(taskModelXML.getBytes());
-
-		LOGGER.info("Task model file : " + taskModelFileName);
-		ContentStream contentStream = new ContentStreamImpl(taskModelFileName, null, "application/xml", inputStream);
-
-		modelFolder.createDocument(properties,contentStream, VersioningState.MAJOR);
+	    LOGGER.info("Task model file : " + taskModelFileName);
+	    modelFolder.createDocument(properties,contentStream, VersioningState.MAJOR);
+		} else {
+		  LOGGER.info("Updating content of " + taskModelFileName);
+		  taskModelDocument.setContentStream(contentStream, true);
+		}
+		
 	}
 	
 	protected void uploadFormConfig(StringBuilder evaluatorConfigStringBuilder, KickstartWorkflow workflow, String baseFileName) {
@@ -394,7 +432,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 			
 			// We're also uploading it to the workflow definition folder, for future use
 			LOGGER.info("Uploading formconfig to " + WORKFLOW_DEFINITION_FOLDER);
-			uploadStringToDocument(formConfig, WORKFLOW_DEFINITION_FOLDER, baseFileName + "-form-config.xml");
+			uploadStringToDocument(formConfig, WORKFLOW_DEFINITION_FOLDER, baseFileName + "-form-config.xml", "application/xml");
 		} catch (Throwable t) {
 			System.err.println("Error: " + t.getMessage());
 			t.printStackTrace();
@@ -548,13 +586,24 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	  Session cmisSession = getCmisSession();
     Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
     
-    HashMap<String, Object> properties = new HashMap<String, Object>();
     String fileName = processDefinitionIdToProcessImage(processDefinitionId); 
-    properties.put("cmis:name", fileName);
-    properties.put("cmis:objectTypeId", "cmis:document");
-    
     ContentStream contentStream = new ContentStreamImpl(fileName, null, "image/png", processImageStream);
-    workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
+
+    Document imageDocument = getDocumentFromFolder(workflowDefinitionFolder.getPath(), fileName);
+    if (imageDocument == null) {
+      
+      HashMap<String, Object> properties = new HashMap<String, Object>();
+      properties.put("cmis:name", fileName);
+      properties.put("cmis:objectTypeId", "cmis:document");
+      
+      workflowDefinitionFolder.createDocument(properties, contentStream, VersioningState.MAJOR);
+      
+    } else {
+      
+      imageDocument.setContentStream(contentStream, true);
+      
+    }
+    
 	}
 	
 	// Helpets //////////////////////
@@ -586,23 +635,32 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
   }
 
   protected Document getDocumentFromFolder(String folderPath, String documentName) {
-    Session cmisSession = getCmisSession();
-    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(folderPath);
-    String path = workflowDefinitionFolder.getPath() + "/" + documentName;
-    return (Document) cmisSession.getObjectByPath(path);
+    try {
+      Session cmisSession = getCmisSession();
+      Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(folderPath);
+      String path = workflowDefinitionFolder.getPath() + "/" + documentName;
+      return (Document) cmisSession.getObjectByPath(path);
+    } catch (CmisObjectNotFoundException e) {
+      return null;
+    }
   }
   
-  protected void uploadStringToDocument(String string, String folderPath, String documentName) {
+  protected void uploadStringToDocument(String string, String folderPath, String documentName, String mimetype) {
     Session cmisSession = getCmisSession();
     Folder folder = (Folder) cmisSession.getObjectByPath(folderPath);
     
-    HashMap<String, Object> properties = new HashMap<String, Object>();
-    String fileName = processDefinitionIdToProcessImage(documentName); 
-    properties.put("cmis:name", fileName);
-    properties.put("cmis:objectTypeId", "cmis:document");
+    ContentStream contentStream = new ContentStreamImpl(documentName, null, mimetype, new ByteArrayInputStream(string.getBytes()));
+    Document document = getDocumentFromFolder(folder.getPath(), documentName); 
     
-    ContentStream contentStream = new ContentStreamImpl(fileName, null, "image/png", new ByteArrayInputStream(string.getBytes()));
-    folder.createDocument(properties, contentStream, VersioningState.MAJOR);
+    if (document == null) {
+      HashMap<String, Object> properties = new HashMap<String, Object>();
+      properties.put("cmis:name", documentName);
+      properties.put("cmis:objectTypeId", "cmis:document");
+      
+      folder.createDocument(properties, contentStream, VersioningState.MAJOR);
+    } else {
+      document.setContentStream(contentStream, true);
+    }
   }
 
 	 // Helper methods for REST calls /////////////////////////////////////////////////////////////////////////////////////
