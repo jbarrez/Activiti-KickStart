@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
@@ -187,11 +189,25 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	    throw new RuntimeException("Missing metadata " + MetaDataKeys.WORKFLOW_JSON_SOURCE);
 	  }
 
-	  // Update workflow id
+	  // Create base name for all files that will be stored
 	  String baseName = kickstartWorkflow.getId();
 	  
-	  // Upload files
-		deployTaskModelAndFormConfig(kickstartWorkflow, baseName); // needs to go first, as the formkey will be filled in here
+	  // Following stringbuilders will construct a valid content model and form config
+    StringBuilder taskModelsString = new StringBuilder();
+    StringBuilder evaluatorConfigStringBuilder = new StringBuilder();
+
+    // Needs to go first, as the formkey will be filled in here
+    for (KickstartTask task : kickstartWorkflow.getTasks()) {
+      if (task instanceof KickstartUserTask) { // Only need to generte a form for user tasks
+        generateTaskAndFormConfigForUserTask((KickstartUserTask) task, taskModelsString, evaluatorConfigStringBuilder);
+      }
+    }
+
+    // Upload results to Alfresco
+    uploadTaskModel(taskModelsString, baseName);
+    uploadFormConfig(evaluatorConfigStringBuilder, kickstartWorkflow, baseName);
+	  
+    // Upload process
 		deployProcess(kickstartWorkflow, baseName, jsonSource); // Can't get the deployment id, so returning process definition id
 		return baseName;
 	}
@@ -294,24 +310,6 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	  return processName.replace(".bpmn20.xml", "");
 	}
 
-	private void deployTaskModelAndFormConfig(KickstartWorkflow workflow, String baseFileName) {
-
-		// Following stringbuilders will construct a valid content model and form config
-		StringBuilder taskModelsString = new StringBuilder();
-		StringBuilder evaluatorConfigStringBuilder = new StringBuilder();
-
-		// XML generation
-		for (KickstartTask task : workflow.getTasks()) {
-			if (task instanceof KickstartUserTask) { // Only need to generte a form for user tasks
-				generateTaskAndFormConfigForUserTask((KickstartUserTask) task, taskModelsString, evaluatorConfigStringBuilder);
-			}
-		}
-
-		// Upload results to Alfresco
-		uploadTaskModel(taskModelsString, baseFileName);
-		uploadFormConfig(evaluatorConfigStringBuilder, workflow, baseFileName);
-	}
-
 	protected void generateTaskAndFormConfigForUserTask(KickstartUserTask userTask,
 			StringBuilder taskModelsString, StringBuilder formConfigString) {
 
@@ -395,51 +393,76 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		  LOGGER.info("Updating content of " + taskModelFileName);
 		  taskModelDocument.setContentStream(contentStream, true);
 		}
-		
 	}
 	
-	protected void uploadFormConfig(StringBuilder evaluatorConfigStringBuilder, KickstartWorkflow workflow, String baseFileName) {
-		HttpState state = new HttpState();
-		state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), 
-				new UsernamePasswordCredentials(cmisUser, cmisPassword));
+	protected void uploadFormConfig(StringBuilder formConfigStringBuilder, KickstartWorkflow workflow, String baseFileName) {
+	  int version = 0;
+    String formConfig = generateFormConfig(formConfigStringBuilder, workflow, version, baseFileName);
 
-		PostMethod postMethod = new PostMethod(FORM_CONFIG_UPLOAD_URL);
-
-		try {
-
-			// Wrap all form-configs in right XML -> this is the FULL form-config
-			// file, including generic start-task definition
-			String formId = "kickstart_form_" + baseFileName;
-			String formConfig = MessageFormat.format(getFormConfigTemplate(),
-					formId, 
-					workflow.getId(),
-					evaluatorConfigStringBuilder.toString());
-			
-			LOGGER.info("Deploying form config XML: ");
-			prettyLogXml(formConfig);
-			
-			postMethod.setRequestEntity(new StringRequestEntity(formConfig, "application/xml", "UTF-8"));
-
-			HttpClient httpClient = new HttpClient();
-			int result = httpClient.executeMethod(null, postMethod, state);
-
-			// Display status code
-			LOGGER.info("Response status code: " + result);
-
-			// Display response
-			LOGGER.info("Response body: ");
-			LOGGER.info(postMethod.getResponseBodyAsString());
-			
-			// We're also uploading it to the workflow definition folder, for future use
-			LOGGER.info("Uploading formconfig to " + WORKFLOW_DEFINITION_FOLDER);
-			uploadStringToDocument(formConfig, WORKFLOW_DEFINITION_FOLDER, baseFileName + "-form-config.xml", "application/xml");
-		} catch (Throwable t) {
-			System.err.println("Error: " + t.getMessage());
-			t.printStackTrace();
-		} finally {
-			postMethod.releaseConnection();
-		}
+    int result = executeFormConfigUpload(formConfig);
+    
+    // Okay, Okay, this is pretty hackish. But it was the fastest way to get it working.
+    // In an ideal world, with plenty of time and pink unicorns, we would fetch the form config
+    // xml, adapt it with the new forms and save that back.
+    // Or even beter: we could query Share to know the actual latest version number
+    while (result == 409) {
+      LOGGER.info("Found deployed form config with version " + version + " Trying now with " + (version + 1));
+      version = version + 1;
+      formConfig = generateFormConfig(formConfigStringBuilder, workflow, version, baseFileName);
+      result = executeFormConfigUpload(formConfig);
+    }
+    
+    // We're also uploading it to the workflow definition folder, for future use
+    LOGGER.info("Uploading formconfig to " + WORKFLOW_DEFINITION_FOLDER);
+    uploadStringToDocument(formConfig, WORKFLOW_DEFINITION_FOLDER, baseFileName + "-form-config.xml", "application/xml");
 	}
+
+  protected int executeFormConfigUpload(String formConfig) {
+    HttpState state = new HttpState();
+    state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials(cmisUser, cmisPassword));
+
+    LOGGER.info("Deploying form config XML: ");
+    prettyLogXml(formConfig);
+    
+    PostMethod postMethod = new PostMethod(FORM_CONFIG_UPLOAD_URL);
+    try {
+      postMethod.setRequestEntity(new StringRequestEntity(formConfig, "application/xml", "UTF-8"));
+      
+      HttpClient httpClient = new HttpClient();
+      int result = httpClient.executeMethod(null, postMethod, state);
+      
+      // Display status code
+      LOGGER.info("Response status code: " + result);
+
+      // Display response
+      LOGGER.info("Response body: ");
+      LOGGER.info(postMethod.getResponseBodyAsString());
+      
+      return result;
+      
+    } catch (Throwable t) {
+      System.err.println("Error: " + t.getMessage());
+      t.printStackTrace();
+    } finally {
+      postMethod.releaseConnection();
+    }
+    
+    throw new RuntimeException("Programmatic error. You shouldn't be here.");
+  }
+
+  private String generateFormConfig(StringBuilder evaluatorConfigStringBuilder, KickstartWorkflow workflow, int version, String baseFileName) {
+    String formId = "kickstart_form_" + baseFileName;
+    
+    if (version > 0) {
+      formId += "_" + version;
+    }
+    
+    String formConfig = MessageFormat.format(getFormConfigTemplate(),
+    		formId, 
+    		workflow.getId(),
+    		evaluatorConfigStringBuilder.toString());
+    return formConfig;
+  }
 
 	protected Object getAlfrescoModelType(String type) {
 		if (type.equals("text")) {
@@ -626,12 +649,11 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	 // CMIS helper methods  //////////////////////////////////////////////////////////////////////////////////////////////
 	 
   protected void deleteDocumentFromFolder(String folderPath, String documentName) {
-    Session cmisSession = getCmisSession();
-    Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(folderPath);
-    String path = workflowDefinitionFolder.getPath() + "/" + documentName;
-    Document document = (Document) cmisSession.getObjectByPath(path);
-    document.delete(true);
-    LOGGER.info("Removed document " + path);
+    Document document = getDocumentFromFolder(folderPath, documentName);
+    if (document != null) {
+      document.delete(true);
+      LOGGER.info("Removed document " + folderPath + "/" + documentName);
+    }
   }
 
   protected Document getDocumentFromFolder(String folderPath, String documentName) {
@@ -656,7 +678,6 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
       HashMap<String, Object> properties = new HashMap<String, Object>();
       properties.put("cmis:name", documentName);
       properties.put("cmis:objectTypeId", "cmis:document");
-      
       folder.createDocument(properties, contentStream, VersioningState.MAJOR);
     } else {
       document.setContentStream(contentStream, true);
@@ -733,26 +754,34 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	 }
 	 
   protected void deleteFormConfig(String workflowId) {
-    // There is no json for this, so we fetch the html page and throw some regex at it. Elite, isn't it?
-    GetMethod deleteFormConfigMethod = new GetMethod(SHARE_BASE_URL + "page/modules/module/delete?moduleId=" + URLEncoder.encode("kickstart_form_" + workflowId));
-    executeHttpRequest(deleteFormConfigMethod);
+    String url = SHARE_BASE_URL + "page/modules/module/delete?moduleId=" + URLEncoder.encode("kickstart_form_" + workflowId);
+    int statusCode = executeDelete(url);
+    
+    // Cont. hackyness from the upload. Read all about it there
+    int version = 1;
+    while (statusCode == 200) {
+      executeDelete(url + version);
+      version++;
+    }
   }
   
-  private String executeHttpRequest(HttpMethod method) {
+  private int executeDelete(String url) {
+    LOGGER.info("Executed module delete: " + url);
+    GetMethod method = new GetMethod(url);
     try {
       HttpState httpState = new HttpState();
       httpState.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials("admin", "admin"));
       
       HttpClient httpClient = new HttpClient();
-      httpClient.executeMethod(null, method, httpState);
-      return method.getResponseBodyAsString();
+      return httpClient.executeMethod(null, method, httpState);
     } catch (Throwable t) {
       LOGGER.log(Level.SEVERE, "Error: " + t.getMessage());
       t.printStackTrace();
     } finally {
       method.releaseConnection();
     }
-    return null;
+    
+    throw new RuntimeException("Programmatic error. You shouldn't be here.");
   }
 
 	// Getters & Setters
