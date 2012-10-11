@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -63,8 +62,6 @@ import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
@@ -564,9 +561,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	  
 	  // Get counts
 	  if (includeCounts) {
-      JsonNode jsonNode = retrieveWorkflowInstances(kickstartWorkflowInfo.getId(), 1, 0);
-      long activeCount = jsonNode.get("paging").get("totalItems").asLong();
-      kickstartWorkflowInfo.setNrOfRuntimeInstances(activeCount);
+	    kickstartWorkflowInfo.setNrOfRuntimeInstances(retrieveWorkflowInstanceIds(kickstartWorkflowInfo.getName()).size());
 	  }
 	  
 	  return kickstartWorkflowInfo;
@@ -578,8 +573,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	
 	public void deleteWorkflow(String processDefinitionId) {
     // Delete all workflow instances, as this will block the undeployment of the process otherwise
-	  deleteWorkflowInstances(processDefinitionId, 50);
-	  
+	  deleteWorkflowInstances(processDefinitionId);
 	  
 	  // TODO: make constants for the files, both for use in creation/removal
 	  
@@ -686,12 +680,26 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 	 // Helper methods for REST calls /////////////////////////////////////////////////////////////////////////////////////
 	 
-	 protected JsonNode retrieveWorkflowInstances(String workflowId, long maxItems, long skipCount) {
+	 protected List<String> retrieveWorkflowInstanceIds(String workflowName) {
+	   String url = ALFRESCO_BASE_URL + "api/workflow-instances?state=active"; 
+	   JsonNode json = executeGet(url);
+	   ArrayNode data = (ArrayNode) json.get("data");
+	   
+	   ArrayList<String> workflowInstanceIds = new ArrayList<String>();
+	   for (int i=0; i<data.size(); i++) {
+	     String title = data.get(i).get("title").asText();
+	     if (title.equalsIgnoreCase(workflowName)) {
+	       workflowInstanceIds.add(data.get(i).get("id").asText());
+	     }
+	   }
+	   
+	   return workflowInstanceIds;
+	 }
+	 
+	 protected JsonNode executeGet(String url) {
 	   HttpState state = new HttpState();
      state.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials(cmisUser, cmisPassword));
  
-     // Only fetching one, we're only interested in the paging information, after all
-     String url = ALFRESCO_BASE_URL + "api/workflow-instances?state=active&definitionName=activiti$" + workflowId + "&maxItems=" + maxItems +"&skipCount=" + skipCount; 
      GetMethod getMethod = new GetMethod(url);
      LOGGER.info("Executing GET '" + url + "'");
  
@@ -717,14 +725,12 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
      return null;
 	 }
 	 
-	 protected long deleteWorkflowInstances(String workflowId, long nrOfInstancesToDeletePerRequest) {
-	   JsonNode json = retrieveWorkflowInstances(workflowId, nrOfInstancesToDeletePerRequest, 0);
-	   ArrayNode data = (ArrayNode) json.get("data");
-	   for (int i=0; i<data.size(); i++) {
-	     String workflowInstanceId = data.get(i).get("id").asText();
+	 protected void deleteWorkflowInstances(String workflowName) {
+	   List<String> workflowInstanceIds = retrieveWorkflowInstanceIds(workflowName);
+	   for (String workflowInstanceId : workflowInstanceIds) {
 	     deleteWorkflowInstance(workflowInstanceId);
+	     LOGGER.info("Deleted workflow instance '" + workflowInstanceId + "'");
 	   }
-	   return data.size();
 	 }
 	 
 	 protected void deleteWorkflowInstance(String workflowInstanceId) {
@@ -757,10 +763,10 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
     String url = SHARE_BASE_URL + "page/modules/module/delete?moduleId=" + URLEncoder.encode("kickstart_form_" + workflowId);
     int statusCode = executeDelete(url);
     
-    // Cont. hackyness from the upload. Read all about it there
+    // Cont. hackyness from the upload. Read all about it there.
     int version = 1;
     while (statusCode == 200) {
-      executeDelete(url + version);
+      statusCode = executeDelete(url + "_" + version);
       version++;
     }
   }
@@ -773,7 +779,9 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
       httpState.setCredentials(new AuthScope(null, AuthScope.ANY_PORT), new UsernamePasswordCredentials("admin", "admin"));
       
       HttpClient httpClient = new HttpClient();
-      return httpClient.executeMethod(null, method, httpState);
+      int statusCode = httpClient.executeMethod(null, method, httpState);
+      LOGGER.info("Status code result for delete: " + statusCode);
+      return statusCode;
     } catch (Throwable t) {
       LOGGER.log(Level.SEVERE, "Error: " + t.getMessage());
       t.printStackTrace();
