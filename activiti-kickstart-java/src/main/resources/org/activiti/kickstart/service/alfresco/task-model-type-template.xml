@@ -1,7 +1,9 @@
 <type name="{0}">
 	<parent>bpm:workflowTask</parent>
 	<properties>
-	   <property name="ks:description_{1}">
+	
+	   <!-- Dedicated property for description -->
+	   <property name="{1}">
 	       <type>d:text</type>
 	       <default>{2}</default>
 	   </property>

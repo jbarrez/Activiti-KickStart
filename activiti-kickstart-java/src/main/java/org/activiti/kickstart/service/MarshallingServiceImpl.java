@@ -43,13 +43,13 @@ import org.activiti.kickstart.bpmn20.model.extension.activiti.ActivitiFormProper
 import org.activiti.kickstart.bpmn20.model.gateway.ParallelGateway;
 import org.activiti.kickstart.dto.KickstartFormProperty;
 import org.activiti.kickstart.dto.KickstartMailTask;
+import org.activiti.kickstart.dto.KickstartMailTask.Field;
 import org.activiti.kickstart.dto.KickstartScriptTask;
 import org.activiti.kickstart.dto.KickstartServiceTask;
 import org.activiti.kickstart.dto.KickstartTask;
 import org.activiti.kickstart.dto.KickstartTaskBlock;
 import org.activiti.kickstart.dto.KickstartUserTask;
 import org.activiti.kickstart.dto.KickstartWorkflow;
-import org.activiti.kickstart.dto.KickstartMailTask.Field;
 import org.activiti.kickstart.util.ExpressionUtil;
 
 /**
@@ -130,12 +130,13 @@ public class MarshallingServiceImpl implements Bpmn20MarshallingService {
 				generatedTask.setId("task_" + index++);
 				generatedTask.setName(kickstartTask.getName());
 
-				// Description
-				if (kickstartTask.getDescription() != null) {
-					Documentation taskDocumentation = new Documentation(ExpressionUtil.replaceWhiteSpaces(kickstartTask.getDescription()));
-					taskDocumentation.setId(generatedTask.getId() + "_documentation");
-					generatedTask.getDocumentation().add(taskDocumentation);
-				}
+				// TODO: disabled until I figure out how to do CDATA with JaxB
+//				// Description
+//				if (kickstartTask.getDescription() != null) {
+//					Documentation taskDocumentation = new Documentation(ExpressionUtil.replaceWhiteSpaces(kickstartTask.getDescription()));
+//					taskDocumentation.setId(generatedTask.getId() + "_documentation");
+//					generatedTask.getDocumentation().add(taskDocumentation);
+//				}
 				// process.getFlowElement().add(userTask);
 				TaskBlock.add(generatedTask);
 			}

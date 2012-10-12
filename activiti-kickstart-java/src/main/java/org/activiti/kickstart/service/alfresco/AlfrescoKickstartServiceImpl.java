@@ -37,6 +37,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.activiti.engine.impl.task.TaskDefinition;
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
 import org.activiti.kickstart.dto.KickstartFormProperty;
 import org.activiti.kickstart.dto.KickstartTask;
@@ -196,10 +197,13 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
     StringBuilder taskModelsString = new StringBuilder();
     StringBuilder evaluatorConfigStringBuilder = new StringBuilder();
 
+    // Mapping to store {formProperty} -> {form property with prefix and unique-ified name}
+    HashMap<String, String> formPropertyMapping = new HashMap<String, String>();
+    
     // Needs to go first, as the formkey will be filled in here
     for (KickstartTask task : kickstartWorkflow.getTasks()) {
       if (task instanceof KickstartUserTask) { // Only need to generte a form for user tasks
-        generateTaskAndFormConfigForUserTask((KickstartUserTask) task, taskModelsString, evaluatorConfigStringBuilder);
+        generateTaskAndFormConfigForUserTask((KickstartUserTask) task, taskModelsString, evaluatorConfigStringBuilder, baseName, formPropertyMapping);
       }
     }
 
@@ -311,22 +315,23 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	}
 
 	protected void generateTaskAndFormConfigForUserTask(KickstartUserTask userTask,
-			StringBuilder taskModelsString, StringBuilder formConfigString) {
+			StringBuilder taskModelsString, StringBuilder formConfigString, 
+			String baseName, HashMap<String, String> formPropertyMapping) {
 
 		if (userTask.getForm() != null) {
 
-		  String uuid = UUID.randomUUID().toString(); 
-			String formId = KICKSTART_PREFIX + uuid;
-			userTask.getForm().setFormKey(formId);
-
+		  String uniqueTaskName = baseName + "_" + userTask.getName().toLowerCase().replace(" ", "_");
+		  String prefixedUniqueTaskName = KICKSTART_PREFIX + uniqueTaskName;
+		  userTask.getForm().setFormKey(prefixedUniqueTaskName);
+		  
 			StringBuilder typeString = new StringBuilder();
 			StringBuilder formAppearanceString = new StringBuilder();
 			StringBuilder formVisibilityString = new StringBuilder();
 			
+			String descriptionPropertyName = KICKSTART_PREFIX + "description_" + uniqueTaskName;
 			if (userTask.getDescription() != null) {
-			  String propertyValue = "ks:description_" + uuid;
-			  formVisibilityString.append(MessageFormat.format(getFormConfigFieldVisibilityTemplate(), propertyValue));
-			  formAppearanceString.append(MessageFormat.format(getFormConfigInfoTemplate(), propertyValue, "Description"));
+			  formVisibilityString.append(MessageFormat.format(getFormConfigFieldVisibilityTemplate(), descriptionPropertyName));
+			  formAppearanceString.append(MessageFormat.format(getFormConfigInfoTemplate(), descriptionPropertyName, "Description"));
 			}
 			
 			if (userTask.getForm().getFormProperties() != null
@@ -334,38 +339,55 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 				// Get form-propertes
 				for (KickstartFormProperty formProperty : userTask.getForm().getFormProperties()) {
+				  
+				  String uniquePropertyName = KICKSTART_PREFIX + baseName + "_" + createFriendlyName(formProperty.getProperty());
+				  formPropertyMapping.put(formProperty.getProperty(), uniquePropertyName);
+				  
 					// Property in type-definition
 					typeString.append(MessageFormat.format(
 							getTaskModelPropertyTemplate(),
-							createFriendlyName(formProperty.getProperty()),
+							uniquePropertyName,
 							getAlfrescoModelType(formProperty.getType()),
 							formProperty.isRequired()));
 
 					// Visibility in form-config
 					formVisibilityString.append(MessageFormat.format(
 							getFormConfigFieldVisibilityTemplate(),
-							createFriendlyName(formProperty.getProperty())));
+							uniquePropertyName));
 
 					// Appearance on screen in form-config
 					formAppearanceString.append(MessageFormat.format(
 							getFormConfigFieldTemplate(),
-							createFriendlyName(formProperty.getProperty()),
+							uniquePropertyName,
 							formProperty.getProperty()));
 
 				}
 			}
 			
+			// Replace all expressions in the description with the calculated value
+			for (String formProperty : formPropertyMapping.keySet()) {
+			  String formPropertyExpression = "${" + formProperty + "}";
+			  if (userTask.getDescription().contains(formPropertyExpression)) {
+			    
+			    // Update description
+			    userTask.setDescription(userTask.getDescription()
+			        .replace(formPropertyExpression, "${" + formPropertyMapping.get(formProperty) + "}"));
+			    
+			  }
+			}
+			
 			// Add name and all form-properties to model XML
 			taskModelsString.append(MessageFormat.format(
 					getTaskModelTypeTemplate(), 
-					formId,
-					uuid,
+					prefixedUniqueTaskName,
+					descriptionPropertyName,
 					userTask.getDescription(),
 					typeString.toString()));
 
 			// Add task-form-config
 			formConfigString.append(MessageFormat.format(
-					getFormConfigEvaluatorConfigTemplate(), formId,
+					getFormConfigEvaluatorConfigTemplate(), 
+					prefixedUniqueTaskName,
 					formVisibilityString.toString(),
 					formAppearanceString.toString()));
 		}
@@ -482,8 +504,8 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 		return null;
 	}
 
-	protected Object createFriendlyName(String property) {
-		return "ks:" + property.toLowerCase().replace(" ", "_");
+	protected String createFriendlyName(String property) {
+		return property.toLowerCase().replace(" ", "_");
 	}
 	
 	public String getWorkflowMetaData(String processDefinitionId, String metadataKey) {

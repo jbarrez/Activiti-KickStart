@@ -215,6 +215,7 @@ public class TransformationServiceImpl implements TransformationService {
 		// task name
 		baseTaskDto.setName(task.getName());
 
+		// TODO: Disabled until I figure out how I can do CDATE with JaxB
 		// task description
 		if (!task.getDocumentation().isEmpty()) {
 			baseTaskDto.setDescription(task.getDocumentation().get(0).getText());
