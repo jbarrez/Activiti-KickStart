@@ -132,6 +132,9 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
   private static final String FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-field-visibility-template.xml";
   private static String FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE;
+  
+  private static final String FORM_CONFIG_FIELD_INFO_TEMPLATE_FILE = TEMPLATE_FOLDER + "form-config-field-info-control-template.xml";
+  private static String FORM_CONFIG_FIELD_INFO_TEMPLATE;
 
   // Service parameters
   // ///////////////////////////////////////////////////////////
@@ -312,17 +315,22 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 
 		if (userTask.getForm() != null) {
 
-			String formId = KICKSTART_PREFIX + UUID.randomUUID().toString();
+		  String uuid = UUID.randomUUID().toString(); 
+			String formId = KICKSTART_PREFIX + uuid;
 			userTask.getForm().setFormKey(formId);
 
 			StringBuilder typeString = new StringBuilder();
 			StringBuilder formAppearanceString = new StringBuilder();
 			StringBuilder formVisibilityString = new StringBuilder();
-
+			
+			if (userTask.getDescription() != null) {
+			  String propertyValue = "ks:description_" + uuid;
+			  formVisibilityString.append(MessageFormat.format(getFormConfigFieldVisibilityTemplate(), propertyValue));
+			  formAppearanceString.append(MessageFormat.format(getFormConfigInfoTemplate(), propertyValue, "Description"));
+			}
+			
 			if (userTask.getForm().getFormProperties() != null
 					&& userTask.getForm().getFormProperties().size() > 0) {
-
-				typeString.append("<properties>");
 
 				// Get form-propertes
 				for (KickstartFormProperty formProperty : userTask.getForm().getFormProperties()) {
@@ -345,12 +353,14 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 							formProperty.getProperty()));
 
 				}
-				typeString.append("</properties>");
 			}
-
+			
 			// Add name and all form-properties to model XML
 			taskModelsString.append(MessageFormat.format(
-					getTaskModelTypeTemplate(), formId,
+					getTaskModelTypeTemplate(), 
+					formId,
+					uuid,
+					userTask.getDescription(),
 					typeString.toString()));
 
 			// Add task-form-config
@@ -876,6 +886,13 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 			FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE = readTemplateFile(FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE_FILE);
 		}
 		return FORM_CONFIG_FIELD_VISIBILITY_TEMPLATE;
+	}
+	
+	protected String getFormConfigInfoTemplate() {
+	  if (FORM_CONFIG_FIELD_INFO_TEMPLATE == null) {
+	    FORM_CONFIG_FIELD_INFO_TEMPLATE = readTemplateFile(FORM_CONFIG_FIELD_INFO_TEMPLATE_FILE);
+	  }
+	  return FORM_CONFIG_FIELD_INFO_TEMPLATE;
 	}
 	
 	protected String readTemplateFile(String templateFile) {

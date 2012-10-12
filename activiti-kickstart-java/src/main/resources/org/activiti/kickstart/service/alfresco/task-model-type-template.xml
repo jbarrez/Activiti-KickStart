@@ -1,4 +1,12 @@
 <type name="{0}">
-	<parent>bpm:startTask</parent>
-	{1}
+	<parent>bpm:workflowTask</parent>
+	<properties>
+	   <property name="ks:description_{1}">
+	       <type>d:text</type>
+	       <default>{2}</default>
+	   </property>
+	   
+	   {3}
+	   
+	</properties>
 </type>

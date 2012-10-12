@@ -6,13 +6,13 @@
 				<show id="transitions" />
 			</field-visibility>
 			<appearance>
+			
 				<set id="" appearance="title" label-id="General" />
 				<set id="info" appearance="" label-id="Info" />
 				<set id="response" appearance="title" label-id="workflow.set.response" />
-				<field id="bpm_description" label-id="Description" set="info">
-					<control template="/org/alfresco/components/form/controls/info.ftl" />
-				</field>
+				
 				{2}
+				
 				<field id="transitions" set="response" />
 			</appearance>
 		</form>

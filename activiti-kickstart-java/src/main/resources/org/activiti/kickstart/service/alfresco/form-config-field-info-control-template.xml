@@ -1,0 +1,3 @@
+<field id="{0}" label-id="{1}" set="info">
+	<control template="/org/alfresco/components/form/controls/info.ftl" />
+</field>
