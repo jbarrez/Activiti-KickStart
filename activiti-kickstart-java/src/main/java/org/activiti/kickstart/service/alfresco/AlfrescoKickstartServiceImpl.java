@@ -37,7 +37,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.activiti.engine.impl.task.TaskDefinition;
 import org.activiti.kickstart.diagram.ProcessDiagramGenerator;
 import org.activiti.kickstart.dto.KickstartFormProperty;
 import org.activiti.kickstart.dto.KickstartTask;
@@ -343,37 +342,60 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 				  String uniquePropertyName = KICKSTART_PREFIX + baseName + "_" + createFriendlyName(formProperty.getProperty());
 				  formPropertyMapping.put(formProperty.getProperty(), uniquePropertyName);
 				  
-					// Property in type-definition
-					typeString.append(MessageFormat.format(
-							getTaskModelPropertyTemplate(),
-							uniquePropertyName,
-							getAlfrescoModelType(formProperty.getType()),
-							formProperty.isRequired()));
-
-					// Visibility in form-config
-					formVisibilityString.append(MessageFormat.format(
-							getFormConfigFieldVisibilityTemplate(),
-							uniquePropertyName));
-
-					// Appearance on screen in form-config
-					formAppearanceString.append(MessageFormat.format(
-							getFormConfigFieldTemplate(),
-							uniquePropertyName,
-							formProperty.getProperty()));
+				  if (formProperty.getType().equals("documents")) {
+				    
+				    // Package items are part of the parent content model task, 
+				    // hence we do not need to add it to the task model
+//				    formAppearanceString.append("<set id='items' appearance='title' label-id='workflow.set.items' />");
+				    
+	          formVisibilityString.append(MessageFormat.format(
+	                  getFormConfigFieldVisibilityTemplate(),
+	                  "packageItems"));
+	          
+	          formAppearanceString.append(MessageFormat.format(
+	                  getFormConfigFieldTemplate(),
+	                  "packageItems",
+	                  formProperty.getProperty()));
+	          
+//	          formAppearanceString.append("<field id='packageItems' set='items'></field>");
+				    
+				  } else {
+				  
+  					// Property in type-definition
+  					typeString.append(MessageFormat.format(
+  							getTaskModelPropertyTemplate(),
+  							uniquePropertyName,
+  							getAlfrescoModelType(formProperty.getType()),
+  							formProperty.isRequired()));
+  
+  					// Visibility in form-config
+  					formVisibilityString.append(MessageFormat.format(
+  							getFormConfigFieldVisibilityTemplate(),
+  							uniquePropertyName));
+  
+  					// Appearance on screen in form-config
+  					formAppearanceString.append(MessageFormat.format(
+  							getFormConfigFieldTemplate(),
+  							uniquePropertyName,
+  							formProperty.getProperty()));
+  					
+				  }
 
 				}
 			}
 			
 			// Replace all expressions in the description with the calculated value
-			for (String formProperty : formPropertyMapping.keySet()) {
-			  String formPropertyExpression = "${" + formProperty + "}";
-			  if (userTask.getDescription().contains(formPropertyExpression)) {
-			    
-			    // Update description
-			    userTask.setDescription(userTask.getDescription()
-			        .replace(formPropertyExpression, "${" + formPropertyMapping.get(formProperty) + "}"));
-			    
-			  }
+			if (userTask.getDescription() != null) {
+  			for (String formProperty : formPropertyMapping.keySet()) {
+  			  String formPropertyExpression = "${" + formProperty + "}";
+  			  if (userTask.getDescription().contains(formPropertyExpression)) {
+  			    
+  			    // Update description
+  			    userTask.setDescription(userTask.getDescription()
+  			        .replace(formPropertyExpression, "${" + formPropertyMapping.get(formProperty) + "}"));
+  			    
+  			  }
+  			}
 			}
 			
 			// Add name and all form-properties to model XML

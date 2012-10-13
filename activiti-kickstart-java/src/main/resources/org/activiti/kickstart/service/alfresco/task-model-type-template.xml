@@ -1,5 +1,5 @@
 <type name="{0}">
-	<parent>bpm:workflowTask</parent>
+	<parent>bpm:startTask</parent>
 	<properties>
 	
 	   <!-- Dedicated property for description -->

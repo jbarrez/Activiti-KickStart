@@ -1,3 +1,5 @@
 <field id="{0}" label-id="{1}" set="info">
-	<control template="/org/alfresco/components/form/controls/info.ftl" />
+	<control template="/org/alfresco/components/form/controls/textarea.ftl">
+		<control-param name="style">width: 95%</control-param>
+	</control>
 </field>
