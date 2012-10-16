@@ -33,6 +33,10 @@ public class KickstartApplication extends Application {
     
     router.attach("/workflows", WorkflowsResource.class);
     
+    router.attach("/groups", GroupsResource.class);
+    router.attach("/users", UsersResource.class);
+    router.attach("/users/{filter}", UsersResource.class);
+    
     return router;
   }
   

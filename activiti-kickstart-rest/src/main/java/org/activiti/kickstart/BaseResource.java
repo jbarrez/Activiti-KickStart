@@ -4,6 +4,9 @@ import org.activiti.kickstart.service.KickstartService;
 import org.activiti.kickstart.service.KickstartServiceFactory;
 import org.restlet.resource.ServerResource;
 
+/**
+ * @author jbarrez
+ */
 public class BaseResource extends ServerResource {
 	
 	protected static KickstartService kickstartServiceInstance;

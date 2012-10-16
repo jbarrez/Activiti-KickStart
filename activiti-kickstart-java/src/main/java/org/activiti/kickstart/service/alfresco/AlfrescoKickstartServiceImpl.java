@@ -346,8 +346,6 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 				    
 				    // Package items are part of the parent content model task, 
 				    // hence we do not need to add it to the task model
-//				    formAppearanceString.append("<set id='items' appearance='title' label-id='workflow.set.items' />");
-				    
 	          formVisibilityString.append(MessageFormat.format(
 	                  getFormConfigFieldVisibilityTemplate(),
 	                  "packageItems"));
@@ -357,8 +355,6 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	                  "packageItems",
 	                  formProperty.getProperty()));
 	          
-//	          formAppearanceString.append("<field id='packageItems' set='items'></field>");
-				    
 				  } else {
 				  
   					// Property in type-definition
@@ -969,5 +965,5 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 			e.printStackTrace();
 		}
 	}
-
+	
 }
