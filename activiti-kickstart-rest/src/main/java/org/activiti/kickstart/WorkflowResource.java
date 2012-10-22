@@ -140,6 +140,19 @@ public class WorkflowResource extends BaseResource {
           workflowTask.setName(taskNode.path("name").getTextValue());
           workflowTask.setDescription(taskNode.path("description").getTextValue());
           workflowTask.setStartWithPrevious(taskNode.path("startWithPrevious").getBooleanValue());
+          
+          // Task assignee
+          String assigneeType = taskNode.path("assigneeType").getTextValue();
+          if (assigneeType != null) {
+            if (assigneeType.equals("user")) {
+              workflowTask.setAssignee(taskNode.path("assignee").getTextValue());
+            } else if (assigneeType.equals("group")) {
+              workflowTask.setGroups(taskNode.path("assignee").getTextValue());
+            } else if (assigneeType.equals("initiator")) {
+              workflowTask.setAssigneeInitiator(true);
+            }
+          }
+          
 
           // Task form
           JsonNode formArray = taskNode.path("form");

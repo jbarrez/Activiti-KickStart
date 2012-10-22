@@ -106,7 +106,20 @@ public class MarshallingServiceImpl implements Bpmn20MarshallingService {
 		// Start
 		StartEvent startEvent = new StartEvent();
 		startEvent.setId(KickstartWorkflow.START_NAME);
-		startEvent.setInitiator("initiator");
+		
+		// Initiator
+		String initiatorName = "ks_initiator";
+		startEvent.setInitiator(initiatorName);
+		
+		// Give all user tasks that use 'initiator' the same assignee 
+    for (KickstartTask kickstartTask : kickstartWorkflow.getTasks()) {
+      if (kickstartTask instanceof KickstartUserTask) {
+        KickstartUserTask kickstartUserTask = (KickstartUserTask) kickstartTask;
+        if (kickstartUserTask.isAssigneeInitiator()) {
+          kickstartUserTask.setAssignee("${" + initiatorName + "}");
+        }
+      }
+    }
 		
 		// TODO: For now, fixed start-task is used instead of adhoc-created one. 
 		startEvent.setFormKey("wf:submitAdhocTask"); // used to be ks:genericStartTask (joram)

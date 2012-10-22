@@ -216,13 +216,6 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
 	}
 
 	protected void deployProcess(KickstartWorkflow kickstartWorkflow, String baseFileName,String jsonSource) {
-		
-		// TODO: hack (until we get real users in there)
-		for (KickstartTask kickstartTask : kickstartWorkflow.getTasks()) {
-			((KickstartUserTask) kickstartTask).setAssignee("admin");
-		}
-		// TODO: hack
-	
 		Session cmisSession = getCmisSession();
 		Folder workflowDefinitionFolder = (Folder) cmisSession.getObjectByPath(WORKFLOW_DEFINITION_FOLDER);
 		
@@ -283,6 +276,7 @@ public class AlfrescoKickstartServiceImpl implements KickstartService {
     String processFileName = baseFileName + ".bpmn20.xml";
 		
     String workflowXML = marshallingService.marshallWorkflow(kickstartWorkflow);
+    
     InputStream inputStream = new ByteArrayInputStream(workflowXML.getBytes()); 
     LOGGER.info("Uploading process definition xml...");
     prettyLogXml(workflowXML);

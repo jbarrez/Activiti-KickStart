@@ -18,6 +18,7 @@ package org.activiti.kickstart.dto;
  */
 public class KickstartUserTask extends KickstartTask {
 
+  protected boolean isAssigneeInitiator;
   protected String assignee;
 
   protected String groups;
@@ -46,6 +47,14 @@ public class KickstartUserTask extends KickstartTask {
 
   public void setForm(KickstartForm formDto) {
     this.form = formDto;
+  }
+  
+  public boolean isAssigneeInitiator() {
+    return isAssigneeInitiator;
+  }
+  
+  public void setAssigneeInitiator(boolean isAssigneeInitiator) {
+    this.isAssigneeInitiator = isAssigneeInitiator;
   }
 
   public String generateDefaultFormName() {
